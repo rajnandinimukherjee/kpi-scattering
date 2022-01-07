@@ -1,0 +1,39 @@
+#!/bin/bash
+
+get_files() {
+   find corr_* -type f | sort
+}
+
+count_times() {
+   echo "$files" | sed -r "s/(.*)_dt_(.*)\.(.*)\.h5/\1_dt_nn.\3.h5/" | sort | uniq -c
+}
+
+filter_full() {
+   echo "$counted" | sed -nr 's/^[ ]*96 //p'
+}
+
+get_trajs() {
+   local files="$1"
+   echo "$files" | sed -r "s/(.*)_dt_(.*)\.(.*)\.h5/\3/" | sort | uniq
+}
+
+get_prefixes() {
+   local files="$1"
+   echo "$files" | sed -r "s/(.*)_dt_(.*)\.(.*)\.h5/\1/" | sort | uniq
+}
+
+
+files="$(get_files)"
+counted="$(count_times)"
+full="$(filter_full)"
+trajs="$(get_trajs "$full")"
+prefs="$(get_prefixes "$full")"
+
+for pref in $prefs; do
+   for traj in $trajs; do
+      echo "$full" | grep "${pref}_dt_.*\.$traj.h5" > /dev/null \
+         && echo -n "$traj " \
+         || echo -n "     "
+   done
+   echo " $pref"
+done
