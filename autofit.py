@@ -31,12 +31,12 @@ def get_autofit_file(smeared, K=100, **kwargs):
     delta = 1
 
     pion = stat_object(del_t_binning(pion_data), fold=True, K=K, name='pion')
-    pion.autofit(range(8,20), range(8,20), cosh, [2e+4, 0.08], 
+    pion.autofit(range(5,15), range(5,20), cosh, [2e+4, 0.08], 
                 thin_list=[1,2], plot=True, savefig=True, 
                 param_names=['A_p','m_p'], int_skip=2, pfilter=True)
 
     kaon = stat_object(del_t_binning(kaon_data,delta=1), fold=True, K=K, name='kaon')
-    kaon.autofit(range(8,20), range(8,20), cosh, [2e+4, 0.08], 
+    kaon.autofit(range(5,15), range(5,20), cosh, [2e+4, 0.08], 
                 thin_list=[1,2], plot=True, savefig=True, 
                 param_names=['A_k','m_k'], int_skip=2, pfilter=True)
 
@@ -102,12 +102,12 @@ def get_autofit_file(smeared, K=100, **kwargs):
             ratio_name = names[j//2]+I[j%2]+'DEL'+str(Delta[i])
             ratios[j,i] = stat_object(ATW_corrs[j][i].samples/denoms[j//2],K=K,
                     data_avg=ATW_corrs[j][i].data_avg/pk_avgs[j//2],name=ratio_name)
-            ratios[j,i].autofit(range(4,int(Delta[i]/2)-1), range(6,14),
+            ratios[j,i].autofit(range(4,int(Delta[i]/2)-1), range(6,Delta[i]-6),
                                 ansatz_list[j//2], [1,1,0.8], thin_list=[1,2],
                                 limit=Delta[i], #plot=True, savefig=True,
                                 param_names=['A_'+ratios[j,i].name,
                                              'c0_'+ratios[j,i].name],
-                                int_skip=2, m_p=m_pion, pfilter=True)
+                                int_skip=2, m_p=m_pion, pfilter=False)
             best_fits.update({ratios[j,i].name:ratios[j,i].interval})
 
     c0 = np.array([[ratios[i,j].params[1] for j in range(len(Delta))] for i in range(4)])
@@ -149,7 +149,7 @@ def get_autofit_file(smeared, K=100, **kwargs):
             K=K, name='KpiI12_ratio', I=0.5)
     KpiI12_ratio_IB = stat_object((KpiI12_ratio.samples-ATW_12.samples), fold=True,
                             K=K, data_avg=(KpiI12_ratio.data_avg-ATW_12.data_avg))
-    KpiI12_ratio_IB.autofit(range(8,20), range(4,15), ratio_ansatz, [1, 0.001],
+    KpiI12_ratio_IB.autofit(range(5,15), range(4,20), ratio_ansatz, [1, 0.001],
                             thin_list=[1,2], pfliter=True, #plot=True, savefig=True,
                             param_names=['A_Kpi12','DE12'], int_skip=2)
 
@@ -159,7 +159,7 @@ def get_autofit_file(smeared, K=100, **kwargs):
             K=K, name='KpiI32_ratio', I=1.5)
     KpiI32_ratio_IB = stat_object((KpiI32_ratio.samples-ATW_32.samples), fold=True,
                             K=K, data_avg=(KpiI32_ratio.data_avg-ATW_32.data_avg))
-    KpiI32_ratio_IB.autofit(range(8,20), range(4,15), ratio_ansatz, [1, 0.001],
+    KpiI32_ratio_IB.autofit(range(5,15), range(4,20), ratio_ansatz, [1, 0.001],
                             thin_list=[1,2], pfilter=True, #plot=True, savefig=True,
                             param_names=['A_Kpi32','DE32'], int_skip=2)
 

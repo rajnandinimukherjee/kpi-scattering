@@ -169,8 +169,23 @@ pt_sm_corrI32.fit((0,pt_sm_corrI32.T-1,1), pt_sm_combined, guess, index=8,
 pt_sm_corrI12.autofit_df, pt_sm_corrI32.autofit_df = pickle.load(open('pickles/pt_sm_dfs.p','rb'))
 pt_sm_corrI12.autofit_dict, pt_sm_corrI32.autofit_dict = pickle.load(open('pickles/pt_sm_dicts.p','rb'))
 
-pt_sm_corrI12.autofit_plot(int_skip=2, plot_params=[14,15], plothist=True, 
+pt_sm_corrI12.autofit_plot(int_skip=2, plot_params=[14,15], 
                         hist_deltas=range(8,15), hist_t_min=8)
-pt_sm_corrI32.autofit_plot(int_skip=2, plot_params=[14,15], plothist=True, 
+pt_sm_corrI32.autofit_plot(int_skip=2, plot_params=[14,15], 
                         hist_deltas=range(8,15), hist_t_min=8)
+
+lat12 = {'m_p':pt_sm_corrI12.params[1],
+         'm_k':pt_sm_corrI12.params[4],
+         'DE':pt_sm_corrI12.params[15],
+         'a0':pt_sm_corrI12.fit_dict['calc_func'][0],
+         'a0_sys':pt_sm_corrI12.fit_dict['calc_func_sys_err'][0]}
+
+lat32 = {'m_p':pt_sm_corrI32.params[1],
+         'm_k':pt_sm_corrI32.params[4],
+         'DE':pt_sm_corrI32.params[15],
+         'a0':pt_sm_corrI32.fit_dict['calc_func'][0],
+         'a0_sys':pt_sm_corrI32.fit_dict['calc_func_sys_err'][0]}
+
+from errors import load_errors
+errors, errors_pc = load_errors(lat12, lat32)
 plt.show()
