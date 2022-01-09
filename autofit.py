@@ -15,7 +15,6 @@ data_dir = 'correlators/'
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
-
 from load_data import load_Kpi_data
 from fit_routine import *
 T = 96
@@ -31,14 +30,12 @@ def get_autofit_file(smeared, K=100, **kwargs):
     delta = 1
 
     pion = stat_object(del_t_binning(pion_data), fold=True, K=K, name='pion')
-    pion.autofit(range(5,15), range(5,20), cosh, [2e+4, 0.08], 
-                thin_list=[1,2], plot=True, savefig=True, 
-                param_names=['A_p','m_p'], int_skip=2, pfilter=True)
+    pion.autofit(range(5,15), range(5,15), cosh, [2e+4, 0.08], 
+                thin_list=[1,2], param_names=['A_p','m_p'])
 
     kaon = stat_object(del_t_binning(kaon_data,delta=1), fold=True, K=K, name='kaon')
-    kaon.autofit(range(5,15), range(5,20), cosh, [2e+4, 0.08], 
-                thin_list=[1,2], plot=True, savefig=True, 
-                param_names=['A_k','m_k'], int_skip=2, pfilter=True)
+    kaon.autofit(range(5,20), range(5,15), cosh, [1e+3, 0.28], 
+                thin_list=[1,2], param_names=['A_k','m_k'])
 
     m_pion, m_kaon = pion.params[1], kaon.params[1]
 
@@ -74,6 +71,15 @@ def get_autofit_file(smeared, K=100, **kwargs):
 
     ATW_corrs = np.array([KKpipi12, KKpipi32, piKpiK12, piKpiK32], dtype=object)
 
+    def KKpipi_ansatz(params, t, **kwargs):
+        c0, A = params
+        return c0 + A*np.exp(2*m_pion*t)
+
+    def piKpiK_ansatz(params, t, **kwargs):
+        c0, A = params
+        m_p = m_pion
+        return c0 + A*np.exp(-2*m_pion*t)
+
     names, I = ['KKpipi', 'piKpiK'], ['12','32']
     ansatz_list = [KKpipi_ansatz, piKpiK_ansatz]
     ratios = np.empty(shape=(4,len(Delta)),dtype=object)
@@ -102,12 +108,12 @@ def get_autofit_file(smeared, K=100, **kwargs):
             ratio_name = names[j//2]+I[j%2]+'DEL'+str(Delta[i])
             ratios[j,i] = stat_object(ATW_corrs[j][i].samples/denoms[j//2],K=K,
                     data_avg=ATW_corrs[j][i].data_avg/pk_avgs[j//2],name=ratio_name)
-            ratios[j,i].autofit(range(4,int(Delta[i]/2)-1), range(6,Delta[i]-6),
-                                ansatz_list[j//2], [1,1,0.8], thin_list=[1,2],
-                                limit=Delta[i], #plot=True, savefig=True,
+            ratios[j,i].autofit(range(4,int(Delta[i]/2)-1), range(6,14),
+                                ansatz_list[j//2], [1,1], thin_list=[1,2],
+                                limit=Delta[i],
                                 param_names=['A_'+ratios[j,i].name,
                                              'c0_'+ratios[j,i].name],
-                                int_skip=2, m_p=m_pion, pfilter=False)
+                                int_skip=2, correlated=True)
             best_fits.update({ratios[j,i].name:ratios[j,i].interval})
 
     c0 = np.array([[ratios[i,j].params[1] for j in range(len(Delta))] for i in range(4)])
@@ -148,39 +154,30 @@ def get_autofit_file(smeared, K=100, **kwargs):
             data_avg=KpiI12.org_data_avg/(pion.org_data_avg*kaon.org_data_avg),
             K=K, name='KpiI12_ratio', I=0.5)
     KpiI12_ratio_IB = stat_object((KpiI12_ratio.samples-ATW_12.samples), fold=True,
-                            K=K, data_avg=(KpiI12_ratio.data_avg-ATW_12.data_avg))
-    KpiI12_ratio_IB.autofit(range(5,15), range(4,20), ratio_ansatz, [1, 0.001],
-                            thin_list=[1,2], pfliter=True, #plot=True, savefig=True,
-                            param_names=['A_Kpi12','DE12'], int_skip=2)
+                            K=K, data_avg=(KpiI12_ratio.data_avg-ATW_12.data_avg),
+                            name='KpiI12_ratio_IB')
+    KpiI12_ratio_IB.autofit(range(5,20), range(5,15), ratio_ansatz, [1, 0.001],
+                            thin_list=[1,2], param_names=['A_Kpi12','DE12'])
+                            #pfliter=True, plot=True, savefig=True, int_skip=2
 
     KpiI32 = stat_object(D-C, K=K)
     KpiI32_ratio = stat_object(KpiI32.org_samples/(pion.org_samples*kaon.org_samples),
             data_avg=KpiI32.org_data_avg/(pion.org_data_avg*kaon.org_data_avg),
             K=K, name='KpiI32_ratio', I=1.5)
     KpiI32_ratio_IB = stat_object((KpiI32_ratio.samples-ATW_32.samples), fold=True,
-                            K=K, data_avg=(KpiI32_ratio.data_avg-ATW_32.data_avg))
-    KpiI32_ratio_IB.autofit(range(5,15), range(4,20), ratio_ansatz, [1, 0.001],
-                            thin_list=[1,2], pfilter=True, #plot=True, savefig=True,
-                            param_names=['A_Kpi32','DE32'], int_skip=2)
+                            K=K, data_avg=(KpiI32_ratio.data_avg-ATW_32.data_avg),
+                            name='KpiI32_ratio_IB')
+    KpiI32_ratio_IB.autofit(range(5,20), range(5,15), ratio_ansatz, [1, 0.001],
+                            thin_list=[1,2], param_names=['A_Kpi32','DE32'])
+                            #pfliter=True, plot=True, savefig=True, int_skip=2
 
     best_fits.update({'KpiI12_ratio':KpiI12_ratio_IB.interval,
                       'KpiI32_ratio':KpiI32_ratio_IB.interval})
 
     pickle.dump(best_fits, open('pickles/best_fits_sm'+str(smeared)+'.p','wb'))
+    #print(best_fits)
     return best_fits
 
-
-def KKpipi_ansatz(params, t, **kwargs):
-    c0, A, m_p = params
-    if 'm_pion' in kwargs.keys():
-        m_p = kwargs['m_pion']
-    return c0 + A*np.exp(2*m_p*t)
-
-def piKpiK_ansatz(params, t, **kwargs):
-    c0, A, m_p = params
-    if 'm_pion' in kwargs.keys():
-        m_p = kwargs['m_pion']
-    return c0 + A*np.exp(-2*m_p*t)
 
 def del_t_binning(data, delta=0, binsize=96, **kwargs): 
     T, cfgs = data.shape[:2]

@@ -323,7 +323,7 @@ class stat_object:
 
 
     def best_fit(self, imp_params='all', weights='equal',
-                 hyperweights={'pvalue_cost':0.5,
+                 hyperweights={'pvalue_cost':1,
                               'fit_stbl_cost':1,
                               'err_cost':1,
                               'val_stbl_cost':1}, **kwargs):
@@ -362,7 +362,7 @@ class stat_object:
         self.autofit_df['cost'] = self.autofit_df.pvalue*0
         for c in ['pvalue_cost', 'fit_stbl_cost', 'err_cost', 'val_stbl_cost']:
             if np.isnan(self.best_fit_dict[c]).any():
-                print(c+str(' has nan'))
+                #print(c+str(' has nan'))
                 continue
             self.autofit_df['cost'] += hyperweights[c]*self.best_fit_dict[c]
 

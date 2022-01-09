@@ -136,26 +136,29 @@ pion2, kaon_sm, ratios_sm, KpiI12_sm_ratio, KpiI32_sm_ratio = get_correlators(da
 
 guess = [2e+4, 0.08, 1e+3, 1e+2, 0.28, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.001]
 
+# modified hyperweights for combined fits
+hyperweights = {'pvalue_cost':0.5,
+                'fit_stbl_cost':1,
+                'err_cost':1,
+                'val_stbl_cost':1}
+
 pt_sm_corrI12 = stat_object([pion, kaon, kaon_sm, ratios[0,2], ratios[2,2],
                           ratios_sm[0,2], ratios_sm[2,2], KpiI12_ratio,
                           KpiI12_sm_ratio], object_type='combined', K=K,
                           name='pt_sm_corrI12')
 pt_sm_corrI12.fit((0,pt_sm_corrI12.T-1,1), pt_sm_combined, guess, index=8, 
                   COV_model=cov_block_diag, 
-                  #correlated=False,
-                  #COV_inv_L=svd_model,
                     I=0.5)
 pt_sm_corrI12.autofit(range(5,15), range(5,15), pt_sm_combined, guess,
-                  COV_model=cov_block_diag, 
-                  #COV_inv_L=svd_model,
-                  #correlated=False,
-                  #thin_list=[1,2],
+                  COV_model=cov_block_diag, hyperweights=hyperweights, 
                   param_names=['A_p', 'm_p', 'A_k', 'A_k_sm', 'm_k',
                   'A_KKpipi', 'A_KKpipi_sm', 'c0_KKpipi', 'c0_KKpipi_sm',
                   'A_piKpiK', 'A_piKpiK_sm', 'c0_piKpiK', 'c0_piKpiK_sm',
                   'A_CKpi', 'A_CKpi_sm', 'DE12'], I=0.5,
                     index=8, pfliter=True, calc_func=[scat_length],
                     calc_func_names=['a0_I12'])
+import pprint as pp
+pp.pprint(pt_sm_corrI12.fit_dict)
 
 pt_sm_corrI32 = stat_object([pion, kaon, kaon_sm, ratios[1,2], ratios[3,2],
                           ratios_sm[1,2], ratios_sm[3,2], KpiI32_ratio,
@@ -163,20 +166,17 @@ pt_sm_corrI32 = stat_object([pion, kaon, kaon_sm, ratios[1,2], ratios[3,2],
                           name='pt_sm_corrI32')
 pt_sm_corrI32.fit((0,pt_sm_corrI32.T-1,1), pt_sm_combined, guess, index=8, 
                   COV_model=cov_block_diag, 
-                  #correlated=False,
-                  #COV_inv_L=svd_model,
                     I=1.5)
 pt_sm_corrI32.autofit(range(5,15), range(5,15), pt_sm_combined, guess,
-                  COV_model=cov_block_diag, 
-                  #correlated=False,
-                  #COV_inv_L=svd_model,
-                  #thin_list=[1,2],
+                  COV_model=cov_block_diag, hyperweights=hyperweights, 
                   param_names=['A_p', 'm_p', 'A_k', 'A_k_sm', 'm_k',
                   'A_KKpipi', 'A_KKpipi_sm', 'c0_KKpipi', 'c0_KKpipi_sm',
                   'A_piKpiK', 'A_piKpiK_sm', 'c0_piKpiK', 'c0_piKpiK_sm',
                   'A_CKpi', 'A_CKpi_sm', 'DE32'], I=1.5,
                     index=8, pfliter=True, calc_func=[scat_length],
                     calc_func_names=['a0_I32'])
+
+pp.pprint(pt_sm_corrI32.fit_dict)
 
 fit_intervals = {corr.name:corr.interval for corr in pt_sm_corrI12.corrs}
 fit_intervals.update({corr.name:corr.interval for corr in pt_sm_corrI32.corrs})
