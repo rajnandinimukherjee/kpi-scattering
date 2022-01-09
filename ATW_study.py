@@ -210,7 +210,8 @@ def ATW_study(I, **kwargs):
     plt.figure()
     plt.errorbar(np.arange(T), avg_cosh, yerr=err_cosh, 
                  linestyle='None', fmt='o', label='cosh')
-    plt.errorbar(np.arange(T), avg_ATW, yerr=err_ATW, label='ATW')
+    plt.errorbar(np.arange(T), avg_ATW, yerr=err_ATW, 
+                 linestyle='None', fmt='o', label='ATW')
     plt.xlabel('$t$')
     title = 'I=1/2' if I==0.5 else 'I=3/2'
     plt.title(title)
@@ -224,20 +225,23 @@ def ATW_study(I, **kwargs):
     params_dist[:,-2:] = corr.params_dist
     errs_no_ATW = np.array([sep_ATW(params_dist[k,:],np.arange(T))
                     for k in range(K)])
-    err_no_ATW_cosh = np.array([st_dev(errs_no_ATW[:,0,t],
-                                mean=avg_no_ATW_cosh[t]) for t in range(T)])
+    #err_no_ATW_cosh = np.array([st_dev(errs_no_ATW[:,0,t],
+    #                            mean=avg_no_ATW_cosh[t]) for t in range(T)])
+    ratio_ATW = avg_no_ATW_cosh/avg_cosh
+    ratio_err = np.array([st_dev(errs_no_ATW[:,0,t]/errs[:,0,t],mean=ratio_ATW[t])
+                        for t in range(T)])
 
     plt.figure()
-    ratio_ATW = avg_cosh/avg_no_ATW_cosh
-    plt.errorbar(np.arange(T), ratio_ATW, 
-                 yerr=err_no_ATW_cosh/err_cosh, capsize=2, fmt='o',
+    plt.errorbar(np.arange(T), ratio_ATW, yerr=ratio_err, capsize=2, fmt='o',
                  linestyle='None', label='no_ATW/with_ATW')
     plt.xlabel('$t$')
     plt.text(30,ratio_ATW[0],s=f'slope={ratio_ATW[15]-ratio_ATW[14]}') 
     plt.legend()
     plt.title(title)
     plt.savefig('plots/no_ATW_vs_with_ATW_I'+iso+'.pdf')
+
+    return ratio_ATW, ratio_err
     
 
-ATW_study(I=0.5)
-ATW_study(I=1.5)
+rat12, err12 = ATW_study(I=0.5)
+rat32, err32 = ATW_study(I=1.5)
