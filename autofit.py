@@ -127,7 +127,7 @@ def get_autofit_file(smeared, K=100, **kwargs):
     
     T_arr = np.arange(T)
     def ATW_t_dep(c_KKpipi, c_piKpiK, t, m_p, m_k):
-        numerator = c_KKpipi*np.exp(-m_k*t-m_p*(T-t))+c_piKpiK*np.exp(-m_k*t-m_p*(T-t))
+        numerator = c_KKpipi*np.exp(-m_k*t-m_p*(T-t))+c_piKpiK*np.exp(-m_p*t-m_k*(T-t))
         denominator = cosh([1,m_p],t)*cosh([1,m_k],t)
         return numerator/denominator
 
@@ -157,7 +157,8 @@ def get_autofit_file(smeared, K=100, **kwargs):
                             K=K, data_avg=(KpiI12_ratio.data_avg-ATW_12.data_avg),
                             name='KpiI12_ratio_IB')
     KpiI12_ratio_IB.autofit(range(5,20), range(5,15), ratio_ansatz, [1, 0.001],
-                            thin_list=[1,2], param_names=['A_Kpi12','DE12'])
+                            thin_list=[1,2], param_names=['A_Kpi12','DE12'],
+                            correlated=True)
                             #pfliter=True, plot=True, savefig=True, int_skip=2
 
     KpiI32 = stat_object(D-C, K=K)
@@ -168,15 +169,15 @@ def get_autofit_file(smeared, K=100, **kwargs):
                             K=K, data_avg=(KpiI32_ratio.data_avg-ATW_32.data_avg),
                             name='KpiI32_ratio_IB')
     KpiI32_ratio_IB.autofit(range(5,20), range(5,15), ratio_ansatz, [1, 0.001],
-                            thin_list=[1,2], param_names=['A_Kpi32','DE32'])
+                            thin_list=[1,2], param_names=['A_Kpi32','DE32'],
+                            correlated=False)
                             #pfliter=True, plot=True, savefig=True, int_skip=2
 
     best_fits.update({'KpiI12_ratio':KpiI12_ratio_IB.interval,
                       'KpiI32_ratio':KpiI32_ratio_IB.interval})
 
-    pickle.dump(best_fits, open('pickles/best_fits_sm'+str(smeared)+'.p','wb'))
-    #print(best_fits)
-    return best_fits
+    #pickle.dump(best_fits, open('pickles/best_fits_sm'+str(smeared)+'.p','wb'))
+    return [pion, kaon, ratios, KpiI12_ratio_IB, KpiI32_ratio_IB], best_fits
 
 
 def del_t_binning(data, delta=0, binsize=96, **kwargs): 
@@ -192,6 +193,6 @@ def del_t_binning(data, delta=0, binsize=96, **kwargs):
     return binned_data
 
 
-best_fits_smFalse = get_autofit_file(smeared=False)
-best_fits_smTrue = get_autofit_file(smeared=True)
+corrs_smFalse, best_fits_smFalse = get_autofit_file(smeared=False)
+corrs_smTrue, best_fits_smTrue = get_autofit_file(smeared=True)
 

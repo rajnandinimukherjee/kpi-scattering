@@ -123,8 +123,8 @@ def get_correlators(dir_in_use, smeared, K=100, **kwargs):
             ratio_name = names[j//2]+I[j%2]+'DEL'+str(Delta[i])
             ratios[j,i] = stat_object(ATW_corrs[j][i].samples/denoms[j//2],K=K,
                     data_avg=ATW_corrs[j][i].data_avg/pk_avgs[j//2],name=ratio_name)
-            ratios[j,i].fit(best_fits[ratio_name], ansatz_list[j//2], [1,1,0.08],
-                            m_pion=m_pion, correlated=True)
+            ratios[j,i].fit(best_fits[ratio_name], ansatz_list[j//2], [1,1,m_pion],
+                            m_pion=m_pion, correlated=False)
             ratios[j,i].name = ratios[j,i].name+sm
 
     return pion, kaon, ratios, KpiI12_ratio, KpiI32_ratio
