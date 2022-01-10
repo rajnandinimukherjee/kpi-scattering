@@ -232,10 +232,10 @@ def ATW_study(I, **kwargs):
                         for t in range(T)])
 
     plt.figure()
-    plt.errorbar(np.arange(T), ratio_ATW, yerr=ratio_err, capsize=2, fmt='o',
-            linestyle='None', markersize=1, label='no_ATW/with_ATW')
+    plt.errorbar(np.arange(T), ratio_ATW, yerr=ratio_err, capsize=1, fmt='o',
+            linestyle='None', markersize=2, label='no_ATW/with_ATW')
     plt.xlabel('$t$')
-    plt.text(30,ratio_ATW[0],s=f'slope={round(ratio_ATW[15]-ratio_ATW[14],5)}') 
+    plt.text(40,ratio_ATW[0],s=f'm={round(ratio_ATW[15]-ratio_ATW[14],5)}') 
     plt.legend()
     plt.title(title)
     plt.savefig('plots/no_ATW_vs_with_ATW_I'+iso+'.pdf')
@@ -245,3 +245,7 @@ def ATW_study(I, **kwargs):
 
 rat12, err12 = ATW_study(I=0.5)
 rat32, err32 = ATW_study(I=1.5)
+
+def ATW_autofit(I, **kwargs):
+    return 0
+
