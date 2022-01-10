@@ -208,9 +208,9 @@ def ATW_study(I, **kwargs):
     err_ATW = np.array([st_dev(errs[:,1,t],mean=avg_ATW[t]) for t in range(T)])
 
     plt.figure()
-    plt.errorbar(np.arange(T), avg_cosh, yerr=err_cosh, markersize=5, 
+    plt.errorbar(np.arange(T), avg_cosh, yerr=err_cosh, markersize=3, 
                  linestyle='None', fmt='o', label='cosh')
-    plt.errorbar(np.arange(T), avg_ATW, yerr=err_ATW, markersize=5,
+    plt.errorbar(np.arange(T), avg_ATW, yerr=err_ATW, markersize=3,
                  linestyle='None', fmt='o', label='ATW')
     plt.xlabel('$t$')
     title = 'I=1/2' if I==0.5 else 'I=3/2'
