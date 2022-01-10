@@ -233,9 +233,9 @@ def ATW_study(I, **kwargs):
 
     plt.figure()
     plt.errorbar(np.arange(T), ratio_ATW, yerr=ratio_err, capsize=2, fmt='o',
-            linestyle='None', markersize=5, label='no_ATW/with_ATW')
+            linestyle='None', markersize=1, label='no_ATW/with_ATW')
     plt.xlabel('$t$')
-    plt.text(30,ratio_ATW[0],s=f'slope={ratio_ATW[15]-ratio_ATW[14]}') 
+    plt.text(30,ratio_ATW[0],s=f'slope={round(ratio_ATW[15]-ratio_ATW[14],5)}') 
     plt.legend()
     plt.title(title)
     plt.savefig('plots/no_ATW_vs_with_ATW_I'+iso+'.pdf')
