@@ -178,19 +178,18 @@ def sep_ATW(params, t):
     ATW = ATW_KKpipi+ATW_piKpiK
     return [interesting, ATW]
 
-def CKpi_ansatz_sep(params, t, ATW=True, **kwargs):
+def CKpi_2_params(params, t, I=0.5, ATW=True, **kwargs):
     A_CKpi, DE = params
-    if kwargs['I']==0.5:
-        [A_CKpi, m_p, m_k, c0_KKpipi, c0_piKpiK] = pt_sm_corrI12.params[[14,1,4,8,12]]
-    else:
-        [A_CKpi, m_p, m_k, c0_KKpipi, c0_piKpiK] = pt_sm_corrI32.params[[14,1,4,8,12]]
+    glob = pt_sm_corrI12 if I==0.5 else pt_sm_corrI32
+    A_CKpi = glob.params[14] if I==0.5 else glob.params[14]
+    [m_p,m_k,c0_KKpipi,c0_piKpiK] = glob.params[[1,4,8,12]]
+    EKpi = m_p + m_k + DE
+    denom = cosh([1,m_p],t,T=T)*cosh([1,m_k],t,T=T)
+    interesting = A_CKpi*cosh([1,EKpi],t,T=T)/denom
+    ATW_KKpipi = ATW*c0_KKpipi*np.exp(-m_p*t -m_k*(T-t))/denom
+    ATW_piKpiK = ATW*c0_piKpiK*np.exp(-m_k*t -m_p*(T-t))/denom
 
-    if not ATW:
-        c0_KKpipi, c0_piKpiK = 0, 0
-
-    interesting, ATW = sep_ATW([m_p, m_k, c0_KKpipi, c0_piKpiK, A_CKpi, DE], t)
-    return interesting+ATW
-    
+    return interesting + ATW_KKpipi + ATW_piKpiK
 
 def ATW_study(I, **kwargs):
     if I==0.5:
@@ -219,7 +218,10 @@ def ATW_study(I, **kwargs):
     iso = '12' if I==0.5 else '32'
     plt.savefig('plots/cosh_ATW_ratio_I'+iso+'.pdf')
 
-    corr.fit(corr.interval, CKpi_ansatz_sep, params[-2:], ATW=False)
+    corr.autofit(range(5,15), range(4,15), CKpi_2_params, params[-2:], 
+             thin_list=[1,2],ATW=False,I=I)
+    import pprint as pp
+    pp.pprint(corr.fit_dict)
     params[-2:]=corr.params
     avg_no_ATW_cosh, temp = sep_ATW(params,np.arange(T))
     params_dist[:,-2:] = corr.params_dist
@@ -244,32 +246,21 @@ def ATW_study(I, **kwargs):
 rat12, err12 = ATW_study(I=0.5)
 rat32, err32 = ATW_study(I=1.5)
 
-def CKpi_2_params(params, t, I=0.5, ATW=True, **kwargs):
-    A_CKpi, DE = params
-    glob = pt_sm_corrI12 if I==0.5 else pt_sm_corrI32
-    A_CKpi = glob.params[14] if I==0.5 else glob.params[14]
-    [m_p,m_k,c0_KKpipi,c0_piKpiK] = glob.params[[1,4,8,12]]
-    EKpi = m_p + m_k + DE
-    denom = cosh([1,m_p],t,T=T)*cosh([1,m_k],t,T=T)
-    interesting = A_CKpi*cosh([1,EKpi],t,T=T)/denom
-    ATW_KKpipi = ATW*c0_KKpipi*np.exp(-m_p*t -m_k*(T-t))/denom
-    ATW_piKpiK = ATW*c0_piKpiK*np.exp(-m_k*t -m_p*(T-t))/denom
-
-    return interesting + ATW_KKpipi + ATW_piKpiK
-
 def ATW_autofit(I, **kwargs):
     corr = KpiI12_sm_ratio if I==0.5 else KpiI32_sm_ratio 
     
     iso = '12' if I==0.5 else '32'
-    corr.autofit(range(5,10),range(4,11),CKpi_2_params,[1,0.001],
-                ATW=True, I=I, param_names=['A_CKpi','DE'+iso])
-    corr.autofit_plot(plot_params=[1],savefig=True)
-    corr.autofit(range(5,10),range(4,11),CKpi_2_params,[1,0.001],
-                ATW=False, I=I, param_names=['A_CKpi','DE'+iso+'_no_ATW'])
-    corr.autofit_plot(plot_params=[1],savefig=True)
+    corr.autofit(range(5,15),range(4,15),CKpi_2_params,[1,0.001],
+                thin_list=[1,2],ATW=True, I=I, param_names=['A_CKpi','DE'+iso])
+    print(corr.fit_dict)
+    corr.autofit_plot(plot_params=[1],savefig=False)
+    corr.autofit(range(5,15),range(4,15),CKpi_2_params,[1,0.001],
+                thin_list=[1,2],ATW=False, I=I, param_names=['A_CKpi','DE'+iso+'_no_ATW'])
+    corr.autofit_plot(plot_params=[1],savefig=False)
+    print(corr.fit_dict)
     
-ATW_autofit(I=0.5)
-ATW_autofit(I=1.5)
+#ATW_autofit(I=0.5)
+#ATW_autofit(I=1.5)
 
 
 
