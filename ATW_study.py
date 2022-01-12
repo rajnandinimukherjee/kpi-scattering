@@ -218,6 +218,14 @@ def ATW_study(I, **kwargs):
     iso = '12' if I==0.5 else '32'
     plt.savefig('plots/cosh_ATW_ratio_I'+iso+'.pdf')
 
+    plt.figure()
+    cosh_der = np.roll(avg_cosh,-1)-avg_cosh
+    ATW_der = np.roll(avg_ATW,-1)-avg_ATW
+    plt.plot(np.arange(T),cosh_der,label='$d_t(R_{cosh})$') 
+    plt.plot(np.arange(T),ATW_der,label='$d_t(R_{ATW})$') 
+    plt.legend()
+    plt.savefig('plots/cosh_ATW_der_I'+iso+'.pdf')
+
     corr.autofit(range(5,15), range(4,15), CKpi_2_params, params[-2:], 
              thin_list=[1,2],ATW=False,I=I)
     import pprint as pp

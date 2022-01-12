@@ -85,6 +85,22 @@ def scat_length(params, **kwargs):
     a = np.real(roots[np.isreal(roots)][0])
     return a*m_p
 
+def alt_scat_length(params, **kwargs):
+    A_p, m_p = params[:2]
+    A_k, A_k_sm, m_k = params[2:5]
+    A_KKpipi, A_KKpipi_sm, c0_KKpipi, c0_KKpipi_sm = params[5:9]
+    A_piKpiK, A_piKpiK_sm, c0_piKpiK, c0_piKpiK_sm = params[9:13]
+    A_CKpi, A_CKpi_sm, DE = params[13:16]
+
+    mu = m_p*m_k/(m_p+m_k)
+    k0 = DE
+    k1 = 2*np.pi/(mu*(L**3))
+    k2 = k1*c1/L
+    k3 = k1*c2/(L**2)
+    roots = np.roots([k3,k2,k1,k0])
+    a = np.real(roots[np.isreal(roots)][0])
+    return a*mu
+
 def combined_ansatz(params, t, **kwargs):
 
     A_p, m_p, A_k, m_k = params[:4]
@@ -155,8 +171,8 @@ pt_sm_corrI12.autofit(range(5,15), range(5,15), pt_sm_combined, guess,
                   'A_KKpipi', 'A_KKpipi_sm', 'c0_KKpipi', 'c0_KKpipi_sm',
                   'A_piKpiK', 'A_piKpiK_sm', 'c0_piKpiK', 'c0_piKpiK_sm',
                   'A_CKpi', 'A_CKpi_sm', 'DE12'], I=0.5,
-                    index=8, pfliter=True, calc_func=[scat_length],
-                    calc_func_names=['a0_I12'])
+                    index=8, pfliter=True, calc_func=[scat_length, alt_scat_length],
+                    calc_func_names=['m_p_a0_I12','mu_a0_I12'])
 import pprint as pp
 pp.pprint(pt_sm_corrI12.fit_dict)
 
@@ -173,8 +189,8 @@ pt_sm_corrI32.autofit(range(5,15), range(5,15), pt_sm_combined, guess,
                   'A_KKpipi', 'A_KKpipi_sm', 'c0_KKpipi', 'c0_KKpipi_sm',
                   'A_piKpiK', 'A_piKpiK_sm', 'c0_piKpiK', 'c0_piKpiK_sm',
                   'A_CKpi', 'A_CKpi_sm', 'DE32'], I=1.5,
-                    index=8, pfliter=True, calc_func=[scat_length],
-                    calc_func_names=['a0_I32'])
+                    index=8, pfliter=True, calc_func=[scat_length, alt_scat_length],
+                    calc_func_names=['m_p_a0_I32','mu_a0_I32'])
 
 pp.pprint(pt_sm_corrI32.fit_dict)
 

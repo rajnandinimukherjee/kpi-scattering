@@ -459,7 +459,6 @@ class stat_object:
 
                     val = float(self.fit_dict['calc_func'][f])
                     plt.axvline(val, c='k', label='value')
-                    plt.title(self.dict['calc_func_names'][f]+' spread')
 
                     err = float(self.fit_dict['calc_func_err'][f])
                     y_lo, y_up = plt.ylim()
