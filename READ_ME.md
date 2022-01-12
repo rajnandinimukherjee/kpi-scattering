@@ -11,5 +11,6 @@ The most important results can be viewed right away by running [run_through.py](
 however, one can go through the entire analysis step-by-step if they wish using
 the other scripts in this folder. 
 
-Refer to the Wiki for the full description.
+Refer to the [Wiki](https://github.com/rajnandinimukherjee/kpi-scattering/wiki) for a more
+complete description.
 
