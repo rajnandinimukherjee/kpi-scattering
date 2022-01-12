@@ -83,6 +83,22 @@ def scat_length(params, **kwargs):
     a = np.real(roots[np.isreal(roots)][0])
     return a*m_p
 
+def alt_scat_length(params, **kwargs):
+    A_p, m_p = params[:2]
+    A_k, A_k_sm, m_k = params[2:5]
+    A_KKpipi, A_KKpipi_sm, c0_KKpipi, c0_KKpipi_sm = params[5:9]
+    A_piKpiK, A_piKpiK_sm, c0_piKpiK, c0_piKpiK_sm = params[9:13]
+    A_CKpi, A_CKpi_sm, DE = params[13:16]
+
+    mu = m_p*m_k/(m_p+m_k)
+    k0 = DE
+    k1 = 2*np.pi/(mu*(L**3))
+    k2 = k1*c1/L
+    k3 = k1*c2/(L**2)
+    roots = np.roots([k3,k2,k1,k0])
+    a = np.real(roots[np.isreal(roots)][0])
+    return a*mu
+
 def combined_ansatz(params, t, **kwargs):
 
     A_p, m_p, A_k, m_k = params[:4]
@@ -152,7 +168,8 @@ pt_sm_corrI12.fit((0,pt_sm_corrI12.T-1,1), pt_sm_combined, guess, index=8,
                   'A_KKpipi', 'A_KKpipi_sm', 'c0_KKpipi', 'c0_KKpipi_sm',
                   'A_piKpiK', 'A_piKpiK_sm', 'c0_piKpiK', 'c0_piKpiK_sm',
                   'A_CKpi', 'A_CKpi_sm', 'DE12'], pfilter=True,
-                    calc_func=[scat_length], calc_func_names=['a0_I12'])
+                   calc_func=[scat_length, alt_scat_length], 
+                   calc_func_names=['m_p_a0_I12','mu_a0_I12'])
 
 pt_sm_corrI32 = stat_object([pion, kaon, kaon_sm, ratios[1,2], ratios[3,2],
                           ratios_sm[1,2], ratios_sm[3,2], KpiI32_ratio,
@@ -164,29 +181,30 @@ pt_sm_corrI32.fit((0,pt_sm_corrI32.T-1,1), pt_sm_combined, guess, index=8,
                   'A_KKpipi', 'A_KKpipi_sm', 'c0_KKpipi', 'c0_KKpipi_sm',
                   'A_piKpiK', 'A_piKpiK_sm', 'c0_piKpiK', 'c0_piKpiK_sm',
                   'A_CKpi', 'A_CKpi_sm', 'DE32'], pfilter=True,
-                    calc_func=[scat_length], calc_func_names=['$a0_I32$'])
+                   calc_func=[scat_length, alt_scat_length],
+                    calc_func_names=['m_p_a0_I32','mu_a0_I32'])
 
 pt_sm_corrI12.autofit_df, pt_sm_corrI32.autofit_df = pickle.load(open('pickles/pt_sm_dfs.p','rb'))
 pt_sm_corrI12.autofit_dict, pt_sm_corrI32.autofit_dict = pickle.load(open('pickles/pt_sm_dicts.p','rb'))
 
-pt_sm_corrI12.autofit_plot(int_skip=2, plot_params=[14,15], 
+pt_sm_corrI12.autofit_plot(int_skip=2, plot_params=[14,15], plothist=True,
                         hist_deltas=range(8,15), hist_t_min=8, savefig=True)
-pt_sm_corrI32.autofit_plot(int_skip=2, plot_params=[14,15], 
+pt_sm_corrI32.autofit_plot(int_skip=2, plot_params=[14,15], plothist=True,
                         hist_deltas=range(8,15), hist_t_min=8, savefig=True)
 
 lat12 = {'m_p':pt_sm_corrI12.params[1],
          'm_k':pt_sm_corrI12.params[4],
          'DE':pt_sm_corrI12.params[15],
-         'a0':pt_sm_corrI12.fit_dict['calc_func'][0],
-         'a0_stat':pt_sm_corrI12.fit_dict['calc_func_err'][0],
-         'a0_sys':pt_sm_corrI12.fit_dict['calc_func_sys_err'][0]}
+         'a0':pt_sm_corrI12.fit_dict['calc_func'][1],
+         'a0_stat':pt_sm_corrI12.fit_dict['calc_func_err'][1],
+         'a0_sys':pt_sm_corrI12.fit_dict['calc_func_sys_err'][1]}
 
 lat32 = {'m_p':pt_sm_corrI32.params[1],
          'm_k':pt_sm_corrI32.params[4],
          'DE':pt_sm_corrI32.params[15],
-         'a0':pt_sm_corrI32.fit_dict['calc_func'][0],
-         'a0_stat':pt_sm_corrI32.fit_dict['calc_func_err'][0],
-         'a0_sys':pt_sm_corrI32.fit_dict['calc_func_sys_err'][0]}
+         'a0':pt_sm_corrI32.fit_dict['calc_func'][1],
+         'a0_stat':pt_sm_corrI32.fit_dict['calc_func_err'][1],
+         'a0_sys':pt_sm_corrI32.fit_dict['calc_func_sys_err'][1]}
 
 from errors import load_errors
 errors, errors_pc = load_errors(lat12, lat32)
