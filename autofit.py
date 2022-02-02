@@ -19,6 +19,16 @@ from load_data import load_Kpi_data
 from fit_routine import *
 T = 96
 
+from scipy.linalg import block_diag
+def cov_block_diag(obj):
+    N = len(obj.corrs)
+    covs = np.empty(N,dtype=object)
+    for n in range(N):
+        (s,e,t) = obj.corrs[n].interval
+        covs[n] = obj.corrs[n].COV[s:e+1:t, s:e+1:t]
+
+    return block_diag(*covs)
+
 import pdb
 def get_autofit_file(smeared, K=100, **kwargs):
     all_data = load_Kpi_data(data_dir, smeared, **kwargs)
@@ -72,13 +82,16 @@ def get_autofit_file(smeared, K=100, **kwargs):
     ATW_corrs = np.array([KKpipi12, KKpipi32, piKpiK12, piKpiK32], dtype=object)
 
     def KKpipi_ansatz(params, t, **kwargs):
-        c0, A = params
-        return c0 + A*np.exp(2*m_pion*t)
+        c0, A, m_p = params
+        if 'm_pion' in kwargs.keys():
+            m_p = kwargs['m_pion']
+        return c0 + A*np.exp(2*m_p*t)
 
     def piKpiK_ansatz(params, t, **kwargs):
-        c0, A = params
-        m_p = m_pion
-        return c0 + A*np.exp(-2*m_pion*t)
+        c0, A, m_p = params
+        if 'm_pion' in kwargs.keys():
+            m_p = kwargs['m_pion']
+        return c0 + A*np.exp(-2*m_p*t)
 
     names, I = ['KKpipi', 'piKpiK'], ['12','32']
     ansatz_list = [KKpipi_ansatz, piKpiK_ansatz]
@@ -109,14 +122,13 @@ def get_autofit_file(smeared, K=100, **kwargs):
             ratios[j,i] = stat_object(ATW_corrs[j][i].samples/denoms[j//2],K=K,
                     data_avg=ATW_corrs[j][i].data_avg/pk_avgs[j//2],name=ratio_name)
             ratios[j,i].autofit(range(4,int(Delta[i]/2)-1), range(6,14),
-                                ansatz_list[j//2], [1,1], thin_list=[1,2],
-                                limit=Delta[i],
+                                ansatz_list[j//2], [1,1,0], thin_list=[1,2],
+                                limit=Delta[i], m_pion=m_pion,
                                 param_names=['A_'+ratios[j,i].name,
                                              'c0_'+ratios[j,i].name],
                                 int_skip=2, correlated=True)
             best_fits.update({ratios[j,i].name:ratios[j,i].interval})
 
-    c0 = np.array([[ratios[i,j].params[1] for j in range(len(Delta))] for i in range(4)])
     #==========================================================================
     # C_Kpi ratios for both isospin channels
 
@@ -125,59 +137,77 @@ def get_autofit_file(smeared, K=100, **kwargs):
     D = del_t_binning(D_data)
     C, R = del_t_binning(C_data), del_t_binning(R_data)
     
-    T_arr = np.arange(T)
-    def ATW_t_dep(c_KKpipi, c_piKpiK, t, m_p, m_k):
-        numerator = c_KKpipi*np.exp(-m_k*t-m_p*(T-t))+c_piKpiK*np.exp(-m_p*t-m_k*(T-t))
-        denominator = cosh([1,m_p],t)*cosh([1,m_k],t)
-        return numerator/denominator
-
-    def ATW(DEL, I, **kwargs):
-        d = Delta.index(DEL) 
-        I = int(I-0.5)
-        avg_data = ATW_t_dep(c0[0+I,d], c0[2+I,d], np.arange(T), m_pion, m_kaon) 
-        sampled_data = np.array([ATW_t_dep(ratios[0+I,d].params_dist[:,1], 
-                                           ratios[2+I,d].params_dist[:,1], t,
-                                           pion.params_dist[:,1], kaon.params_dist[:,1])
-                                for t in range(T)])
-        ATW = stat_object(sampled_data, K=K, data_avg=avg_data)
-        return ATW
-
-    ATW_12, ATW_32 = ATW(25,1/2), ATW(25,3/2)
-
-    def ratio_ansatz(params, t, **kwargs):
-        numerator = cosh([params[0],params[1]+m_pion+m_kaon],t)
-        denominator = cosh([1,m_pion],t)*cosh([1,m_kaon],t)
-        return numerator/denominator
-
     KpiI12 = stat_object(D+0.5*C-1.5*R, K=K)
     KpiI12_ratio = stat_object(KpiI12.org_samples/(pion.org_samples*kaon.org_samples),
             data_avg=KpiI12.org_data_avg/(pion.org_data_avg*kaon.org_data_avg),
             K=K, name='KpiI12_ratio', I=0.5)
-    KpiI12_ratio_IB = stat_object((KpiI12_ratio.samples-ATW_12.samples), fold=True,
-                            K=K, data_avg=(KpiI12_ratio.data_avg-ATW_12.data_avg),
-                            name='KpiI12_ratio_IB')
-    KpiI12_ratio_IB.autofit(range(5,20), range(5,15), ratio_ansatz, [1, 0.001],
-                            thin_list=[1,2], param_names=['A_Kpi12','DE12'],
-                            correlated=True)
-                            #pfliter=True, plot=True, savefig=True, int_skip=2
 
     KpiI32 = stat_object(D-C, K=K)
     KpiI32_ratio = stat_object(KpiI32.org_samples/(pion.org_samples*kaon.org_samples),
             data_avg=KpiI32.org_data_avg/(pion.org_data_avg*kaon.org_data_avg),
             K=K, name='KpiI32_ratio', I=1.5)
-    KpiI32_ratio_IB = stat_object((KpiI32_ratio.samples-ATW_32.samples), fold=True,
-                            K=K, data_avg=(KpiI32_ratio.data_avg-ATW_32.data_avg),
-                            name='KpiI32_ratio_IB')
-    KpiI32_ratio_IB.autofit(range(5,20), range(5,15), ratio_ansatz, [1, 0.001],
-                            thin_list=[1,2], param_names=['A_Kpi32','DE32'],
-                            correlated=False)
-                            #pfliter=True, plot=True, savefig=True, int_skip=2
 
-    best_fits.update({'KpiI12_ratio':KpiI12_ratio_IB.interval,
-                      'KpiI32_ratio':KpiI32_ratio_IB.interval})
+    for corr in [KpiI12_ratio, KpiI32_ratio]: # choosing random guess intervals for ratio fits
+        corr.interval = (10,17,1)
+        corr.x = np.arange(10,17+1,1)
+        corr.correlated = True
+
+    def CKpi_ansatz(params, t, **kwargs):
+        A_Ckpi, m_p, m_k, DE, c0_KKpipi, c0_piKpiK = params
+        EKpi = m_p + m_k + DE
+        denom = cosh([1,m_p],t,T=T)*cosh([1,m_k],t,T=T)
+        interesting = A_Ckpi*cosh([1,EKpi],t,T=T)/denom
+        RTW_KKpipi = c0_KKpipi*np.exp(-m_p*t -m_k*(T-t))/denom
+        RTW_piKpiK = c0_piKpiK*np.exp(-m_k*t -m_p*(T-t))/denom
+
+        return interesting + RTW_KKpipi + RTW_piKpiK
+
+    def combined_ansatz(params, t, **kwargs):
+
+        A_p, m_p, A_k, m_k = params[:4]
+        A_KKpipi, c0_KKpipi = params[4:6]
+        A_piKpiK, c0_piKpiK = params[6:8]
+        A_CKpi, DE = params[8:]
+
+        pion_part = cosh([A_p,m_p],pion.x,T=T)
+        kaon_part = cosh([A_k,m_k],kaon.x,T=T)
+
+        I_idx = int(kwargs['I']-0.5)
+        KKpipi_part = KKpipi_ansatz([c0_KKpipi,A_KKpipi,m_p],ratios[0+I_idx,2].x)
+        piKpiK_part = piKpiK_ansatz([c0_piKpiK,A_piKpiK,m_p],ratios[2+I_idx,2].x)
+
+        CKpi_part = CKpi_ansatz([A_CKpi, m_p, m_k, DE, c0_KKpipi, c0_piKpiK], t)
+
+        return np.concatenate((pion_part, kaon_part, KKpipi_part, piKpiK_part,
+                               CKpi_part), axis=0)
+
+    guess = [2e+4, 0.08, 1e+3, 0.28, 1, 1, 1, 1, 1, 0.001]
+
+    CMBI12 = stat_object([pion,kaon,ratios[0,2],ratios[2,2],KpiI12_ratio], K=K,
+                        name='CMBI12', object_type='combined')
+    CMBI12.fit((0,CMBI12.T-1,1), combined_ansatz, guess, COV_model=cov_block_diag, 
+                I=0.5, index=4)
+    CMBI12.autofit(range(5,15), range(5,15), combined_ansatz, guess,
+                   index=4, I=0.5, COV_model=cov_block_diag,
+                   param_names=['A_p','m_p','A_k','m_k',
+                   'A_KKpipi', 'c0_KKpipi', 'A_piKpiK', 'c0_piKpiK', 'A_CKpi', 
+                   'DE12'])
+
+    CMBI32 = stat_object([pion,kaon,ratios[1,2],ratios[3,2],KpiI32_ratio], K=K,
+                        name='CMBI32', object_type='combined')
+    CMBI32.fit((0,CMBI32.T-1,1), combined_ansatz, guess, COV_model=cov_block_diag,
+                I=1.5, index=4)
+    CMBI32.autofit(range(5,15), range(5,15), combined_ansatz, guess,
+                   index=4, I=1.5, COV_model=cov_block_diag,
+                   param_names=['A_p','m_p','A_k','m_k',
+                   'A_KKpipi', 'c0_KKpipi', 'A_piKpiK', 'c0_piKpiK', 'A_CKpi', 
+                   'DE32'])
+
+    best_fits.update({'KpiI12_ratio':CMBI12.corrs[4].interval,
+                      'KpiI32_ratio':CMBI32.corrs[4].interval})
 
     #pickle.dump(best_fits, open('pickles/best_fits_sm'+str(smeared)+'.p','wb'))
-    return [pion, kaon, ratios, KpiI12_ratio_IB, KpiI32_ratio_IB], best_fits
+    return [pion, kaon, ratios, KpiI12_ratio, KpiI32_ratio], best_fits
 
 
 def del_t_binning(data, delta=0, binsize=96, **kwargs): 

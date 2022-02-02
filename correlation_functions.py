@@ -48,15 +48,18 @@ def get_correlators(dir_in_use, smeared, K=100, **kwargs):
     D = del_t_binning(D_data)
     C, R = del_t_binning(C_data), del_t_binning(R_data)
 
+    #print(f'D:{np.mean(D,axis=1)},\nC:{np.mean(C,axis=1)},\nR:{np.mean(R,axis=1)}')
+    #pickle.dump([D,C,R], open('DCR.p','wb'))
+
     KpiI12 = stat_object(D+0.5*C-1.5*R, K=K)
     KpiI12_ratio = stat_object(KpiI12.org_samples/(pion.org_samples*kaon.org_samples),
             data_avg=KpiI12.org_data_avg/(pion.org_data_avg*kaon.org_data_avg),
-            K=K, name='KpiI12_ratio', I=0.5)
+            K=K, fold=True, name='KpiI12_ratio', I=0.5)
 
     KpiI32 = stat_object(D-C, K=K)
     KpiI32_ratio = stat_object(KpiI32.org_samples/(pion.org_samples*kaon.org_samples),
             data_avg=KpiI32.org_data_avg/(pion.org_data_avg*kaon.org_data_avg),
-            K=K, name='KpiI32_ratio', I=1.5)
+            K=K, fold=True, name='KpiI32_ratio', I=1.5)
 
     for corr in [KpiI12_ratio, KpiI32_ratio]:
         (s,e,t) = best_fits[corr.name]
@@ -92,7 +95,9 @@ def get_correlators(dir_in_use, smeared, K=100, **kwargs):
     KKpipi12 = np.array([stat_object(KKpipiD[i,:,:]+0.5*KKpipiC[i,:,:]-1.5*KKpipiR[i,:,:], K=K) for i in range(len(Delta))], dtype=object)
     piKpiK32 = np.array([stat_object(piKpiKD[i,:,:]-piKpiKC[i,:,:], K=K) for i in range(len(Delta))], dtype=object)
     piKpiK12 = np.array([stat_object(piKpiKD[i,:,:]+0.5*piKpiKC[i,:,:]-1.5*piKpiKR[i,:,:], K=K) for i in range(len(Delta))], dtype=object)
-
+    
+    #print(f'{np.roll(np.flip(KKpipi12[2].data_avg),-25)/(piKpiK12[2].data_avg*np.exp(2*m_kaon*25))}')
+    #print(f'{np.roll(np.flip(KKpipi12[2].data_avg),25)/(piKpiK12[2].data_avg)}')
     ATW_corrs = np.array([KKpipi12, KKpipi32, piKpiK12, piKpiK32], dtype=object)
 
     names, I = ['KKpipi', 'piKpiK'], ['12','32']

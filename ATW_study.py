@@ -251,36 +251,5 @@ def ATW_study(I, **kwargs):
     return ratio_ATW, ratio_err
     
 
-rat12, err12 = ATW_study(I=0.5)
-rat32, err32 = ATW_study(I=1.5)
-
-def ATW_autofit(I, **kwargs):
-    corr = KpiI12_sm_ratio if I==0.5 else KpiI32_sm_ratio 
-    
-    iso = '12' if I==0.5 else '32'
-    corr.autofit(range(5,15),range(4,15),CKpi_2_params,[1,0.001],
-                thin_list=[1,2],ATW=True, I=I, param_names=['A_CKpi','DE'+iso])
-    print(corr.fit_dict)
-    corr.autofit_plot(plot_params=[1],savefig=False)
-    corr.autofit(range(5,15),range(4,15),CKpi_2_params,[1,0.001],
-                thin_list=[1,2],ATW=False, I=I, param_names=['A_CKpi','DE'+iso+'_no_ATW'])
-    corr.autofit_plot(plot_params=[1],savefig=False)
-    print(corr.fit_dict)
-    
-#ATW_autofit(I=0.5)
-#ATW_autofit(I=1.5)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#rat12, err12 = ATW_study(I=0.5)
+#rat32, err32 = ATW_study(I=1.5)

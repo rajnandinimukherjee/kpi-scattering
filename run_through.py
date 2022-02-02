@@ -215,7 +215,7 @@ def net_sys(I, **kwargs):
     for k in errors_pc.keys():
         var = var + ((errors_pc[k][iso])**2)
     var = var+2
-    print((var**0.5)/100)
+    #print((var**0.5)/100)
     return (var**0.5)/100
 
 final_results = {'I=1/2':{'val':lat12['a0'],
@@ -227,4 +227,4 @@ final_results = {'I=1/2':{'val':lat12['a0'],
 
 
 
-plt.show()
+#plt.show()

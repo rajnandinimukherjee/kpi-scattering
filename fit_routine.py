@@ -73,7 +73,7 @@ def fit_func(corr, y, **kwargs):
         #    t = corr.corrs[n].x
         #else:
         #    t = corr.x
-        return y - corr.ansatz(params, corr.t, **kwargs)
+        return y - corr.ansatz(params, corr.t, **corr.dict)
 
     try:
         if 'COV_inv_L' in corr.dict.keys():
@@ -194,6 +194,7 @@ class stat_object:
 
         self.fit_success = 1
         self.ansatz = ansatz
+        self.dict['instance']='central'
         self.params, self.chi_sq = fit_func(self,y,**self.dict)
         self.fit_avg = self.ansatz(self.params, self.t, **self.dict)
         self.pvalue = gammaincc(self.DOF/2, self.chi_sq/2)
@@ -208,6 +209,7 @@ class stat_object:
             fit_dist = np.zeros(shape=(self.K,len(self.x)))
             for k in range(self.K):
                 y_k = self.samples[self.x,k]
+                self.dict.update({'instance':'sample','k':k})
                 params_dist[k,:], chi_sq_k = fit_func(self, y_k, **self.dict)
                 fit_dist[k,:] = self.ansatz(params_dist[k,:], self.t, **self.dict)
             self.params_err = np.array([st_dev(params_dist[:,i], mean=self.params[i])
@@ -219,6 +221,7 @@ class stat_object:
             params_dist = np.zeros(shape=(self.K,len(self.guess)))
             for k in range(self.K):
                 y_k = self.samples[self.x,k] 
+                self.dict.update({'instance':'sample','k':k})
                 params_dist[k,:], chi_sq_k = fit_func(self, y_k, **self.dict)
             self.params_err = np.array([st_dev(params_dist[:,i], mean=self.params[i])
                                         for i in range(len(self.guess))])
@@ -343,6 +346,7 @@ class stat_object:
 
         err_cost = np.zeros(len(pvalue_cost))
         val_stbl_cost = np.zeros(len(pvalue_cost)) 
+        imp_params = list(np.nonzero(self.guess)[0])
         for p in imp_params:
             err_cost += weights[p]*normalize(df['params_err'].str[p]) 
 
@@ -373,7 +377,7 @@ class stat_object:
                      pfilter=False, **kwargs):
         df = self.autofit_df
         if pfilter:
-            df = df[df.pvalue>0.5][df.pvalue<0.95]
+            df = df[df.pvalue>0.05][df.pvalue<0.95]
         thin = list(self.autofit_dict['thin_list'])
         n_t = len(thin)
 
