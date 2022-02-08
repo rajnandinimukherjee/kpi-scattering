@@ -238,8 +238,9 @@ class stat_object:
             self.fit_dict['calc_func'] = []
             self.fit_dict['calc_func_err'] = []
             for func in self.dict['calc_func']:
-                func_val = func(self.params, t=self.t)
-                func_dist = np.array([func(self.params_dist[k,:], t=self.t)
+                func_val = func(self.params, t=self.t, instance='central')
+                func_dist = np.array([func(self.params_dist[k,:], t=self.t,
+                                           instance='sample', k=k)
                                       for k in range(self.K)])
                 self.fit_dict['calc_func'].append(func_val)
                 #pdb.set_trace()

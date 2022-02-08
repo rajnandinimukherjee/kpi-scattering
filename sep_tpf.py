@@ -206,7 +206,6 @@ CMBI32.autofit(range(5,15), range(5,15), combined_ansatz, guess,
 best_fits.update({'KpiI12_ratio':CMBI12.corrs[2].interval,
                   'KpiI32_ratio':CMBI32.corrs[2].interval})
 
-#pickle.dump(best_fits, open('pickles/best_fits_sm'+str(smeared)+'.p','wb'))
+pickle.dump(best_fits, open('pickles/best_fits_sm'+str(smeared)+'.p','wb'))
 #return [pion, kaon, ratios, KpiI12_ratio, KpiI32_ratio], best_fits
-
 
