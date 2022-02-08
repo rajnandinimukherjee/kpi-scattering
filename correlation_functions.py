@@ -96,6 +96,11 @@ def get_correlators(dir_in_use, smeared, K=100, **kwargs):
     piKpiK32 = np.array([stat_object(piKpiKD[i,:,:]-piKpiKC[i,:,:], K=K) for i in range(len(Delta))], dtype=object)
     piKpiK12 = np.array([stat_object(piKpiKD[i,:,:]+0.5*piKpiKC[i,:,:]-1.5*piKpiKR[i,:,:], K=K) for i in range(len(Delta))], dtype=object)
     
+    #ratio_IB = np.zeros(T)
+    #for t in range(T):
+    #    ratio_IB[t] = KKpipi32[2].data_avg[t]/(pion.data_avg[t]*kaon.data_avg[(25-t)%T])
+    #print(ratio_IB)
+
     #print(f'{np.roll(np.flip(KKpipi12[2].data_avg),-25)/(piKpiK12[2].data_avg*np.exp(2*m_kaon*25))}')
     #print(f'{np.roll(np.flip(KKpipi12[2].data_avg),25)/(piKpiK12[2].data_avg)}')
     ATW_corrs = np.array([KKpipi12, KKpipi32, piKpiK12, piKpiK32], dtype=object)
@@ -109,12 +114,10 @@ def get_correlators(dir_in_use, smeared, K=100, **kwargs):
         p1_data = pion_data
         k1_data = np.zeros(shape=(T,cfgs,T))
         p2_data = np.zeros(shape=(T,cfgs,T))
-        k2_data = np.zeros(shape=(T,cfgs,T))
-        for t_src in range(T):
-            for t in range(T):
-                k1_data[t_src,:,t] = kaon_data[(t+t_src+delta)%T,:,(Delta[i]-t-delta)%T]
-                p2_data[t_src,:,t] = pion_data[(t+t_src)%T,:,(Delta[i]-t)%T]
-                k2_data[t_src,:,t] = kaon_data[t_src,:,(t+delta)%T]
+        k2_data = kaon_data
+        for t in range(T):
+            k1_data[:,:,t] = kaon_data[:,:,(Delta[i]-t)%T]
+            p2_data[:,:,t] = pion_data[:,:,(Delta[i]-t)%T]
 
         p1 = stat_object(del_t_binning(p1_data), K=K)
         k1 = stat_object(del_t_binning(k1_data), K=K)
@@ -128,6 +131,8 @@ def get_correlators(dir_in_use, smeared, K=100, **kwargs):
             ratio_name = names[j//2]+I[j%2]+'DEL'+str(Delta[i])
             ratios[j,i] = stat_object(ATW_corrs[j][i].samples/denoms[j//2],K=K,
                     data_avg=ATW_corrs[j][i].data_avg/pk_avgs[j//2],name=ratio_name)
+            #if j==0 and i==2:
+            #    print(ratios[j,i].data_avg)
             ratios[j,i].fit(best_fits[ratio_name], ansatz_list[j//2], [1,1,m_pion],
                             m_pion=m_pion, correlated=False)
             ratios[j,i].name = ratios[j,i].name+sm

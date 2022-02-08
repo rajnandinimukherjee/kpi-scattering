@@ -60,8 +60,8 @@ def CKpi_ansatz(params, t, ATW=True, **kwargs):
     EKpi = m_p + m_k + DE
     denom = cosh([1,m_p],t,T=T)*cosh([1,m_k],t,T=T)
     interesting = A_CKpi*cosh([1,EKpi],t,T=T)/denom
-    ATW_KKpipi = ATW*c0_KKpipi*np.exp(-m_p*t -m_k*(T-t))/denom
-    ATW_piKpiK = ATW*c0_piKpiK*np.exp(-m_k*t -m_p*(T-t))/denom
+    ATW_KKpipi = ATW*(c0_KKpipi**2)*np.exp(-m_p*t -m_k*(T-t))/denom
+    ATW_piKpiK = ATW*(c0_piKpiK**2)*np.exp(-m_k*t -m_p*(T-t))/denom
 
     return interesting + ATW_KKpipi + ATW_piKpiK
 

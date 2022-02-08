@@ -82,16 +82,14 @@ def get_autofit_file(smeared, K=100, **kwargs):
     ATW_corrs = np.array([KKpipi12, KKpipi32, piKpiK12, piKpiK32], dtype=object)
 
     def KKpipi_ansatz(params, t, **kwargs):
-        c0, A, m_p = params
-        if 'm_pion' in kwargs.keys():
-            m_p = kwargs['m_pion']
-        return c0 + A*np.exp(2*m_p*t)
+        c0, temp = params
+        temp = 1
+        return c0 
 
     def piKpiK_ansatz(params, t, **kwargs):
-        c0, A, m_p = params
-        if 'm_pion' in kwargs.keys():
-            m_p = kwargs['m_pion']
-        return c0 + A*np.exp(-2*m_p*t)
+        c0, temp = params
+        temp = 1
+        return c0 
 
     names, I = ['KKpipi', 'piKpiK'], ['12','32']
     ansatz_list = [KKpipi_ansatz, piKpiK_ansatz]
@@ -102,12 +100,11 @@ def get_autofit_file(smeared, K=100, **kwargs):
         p1_data = pion_data
         k1_data = np.zeros(shape=(T,cfgs,T))
         p2_data = np.zeros(shape=(T,cfgs,T))
-        k2_data = np.zeros(shape=(T,cfgs,T))
+        k2_data = kaon_data
         for t_src in range(T):
             for t in range(T):
-                k1_data[t_src,:,t] = kaon_data[(t+t_src+delta)%T,:,(Delta[i]-t-delta)%T]
-                p2_data[t_src,:,t] = pion_data[(t+t_src)%T,:,(Delta[i]-t)%T]
-                k2_data[t_src,:,t] = kaon_data[t_src,:,(t+delta)%T]
+                k1_data[t_src,:,t] = kaon_data[t_src,:,(Delta[i]-t)%T]
+                p2_data[t_src,:,t] = pion_data[t_src,:,(Delta[i]-t)%T]
 
         p1 = stat_object(del_t_binning(p1_data), K=K)
         k1 = stat_object(del_t_binning(k1_data), K=K)
@@ -122,11 +119,10 @@ def get_autofit_file(smeared, K=100, **kwargs):
             ratios[j,i] = stat_object(ATW_corrs[j][i].samples/denoms[j//2],K=K,
                     data_avg=ATW_corrs[j][i].data_avg/pk_avgs[j//2],name=ratio_name)
             ratios[j,i].autofit(range(4,int(Delta[i]/2)-1), range(6,14),
-                                ansatz_list[j//2], [1,1,0], thin_list=[1,2],
-                                limit=Delta[i], m_pion=m_pion,
-                                param_names=['A_'+ratios[j,i].name,
-                                             'c0_'+ratios[j,i].name],
+                                ansatz_list[j//2], [1,0], thin_list=[1,2],
+                                limit=Delta[i],param_names=['c0_'+ratios[j,i].name, 'temp'],
                                 int_skip=2, correlated=True)
+            print(f'{ratios[j,i].name} fit dict:\n{ratios[j,i].fit_dict}')
             best_fits.update({ratios[j,i].name:ratios[j,i].interval})
 
     #==========================================================================
@@ -157,24 +153,22 @@ def get_autofit_file(smeared, K=100, **kwargs):
         EKpi = m_p + m_k + DE
         denom = cosh([1,m_p],t,T=T)*cosh([1,m_k],t,T=T)
         interesting = A_Ckpi*cosh([1,EKpi],t,T=T)/denom
-        RTW_KKpipi = c0_KKpipi*np.exp(-m_p*t -m_k*(T-t))/denom
-        RTW_piKpiK = c0_piKpiK*np.exp(-m_k*t -m_p*(T-t))/denom
+        RTW_KKpipi = (c0_KKpipi**2)*np.exp(-m_p*t -m_k*(T-t))/denom
+        RTW_piKpiK = (c0_piKpiK**2)*np.exp(-m_k*t -m_p*(T-t))/denom
 
         return interesting + RTW_KKpipi + RTW_piKpiK
 
     def combined_ansatz(params, t, **kwargs):
-
         A_p, m_p, A_k, m_k = params[:4]
-        A_KKpipi, c0_KKpipi = params[4:6]
-        A_piKpiK, c0_piKpiK = params[6:8]
-        A_CKpi, DE = params[8:]
+        c0_KKpipi, c0_piKpiK = params[4:6]
+        A_CKpi, DE = params[6:]
 
         pion_part = cosh([A_p,m_p],pion.x,T=T)
         kaon_part = cosh([A_k,m_k],kaon.x,T=T)
 
         I_idx = int(kwargs['I']-0.5)
-        KKpipi_part = KKpipi_ansatz([c0_KKpipi,A_KKpipi,m_p],ratios[0+I_idx,2].x)
-        piKpiK_part = piKpiK_ansatz([c0_piKpiK,A_piKpiK,m_p],ratios[2+I_idx,2].x)
+        KKpipi_part = KKpipi_ansatz([c0_KKpipi,0],ratios[0+I_idx,2].x)
+        piKpiK_part = piKpiK_ansatz([c0_piKpiK,0],ratios[2+I_idx,2].x)
 
         CKpi_part = CKpi_ansatz([A_CKpi, m_p, m_k, DE, c0_KKpipi, c0_piKpiK], t)
 
@@ -190,7 +184,7 @@ def get_autofit_file(smeared, K=100, **kwargs):
     CMBI12.autofit(range(5,15), range(5,15), combined_ansatz, guess,
                    index=4, I=0.5, COV_model=cov_block_diag,
                    param_names=['A_p','m_p','A_k','m_k',
-                   'A_KKpipi', 'c0_KKpipi', 'A_piKpiK', 'c0_piKpiK', 'A_CKpi', 
+                   'c0_KKpipi', 'c0_piKpiK', 'A_CKpi', 
                    'DE12'])
 
     CMBI32 = stat_object([pion,kaon,ratios[1,2],ratios[3,2],KpiI32_ratio], K=K,
@@ -200,13 +194,13 @@ def get_autofit_file(smeared, K=100, **kwargs):
     CMBI32.autofit(range(5,15), range(5,15), combined_ansatz, guess,
                    index=4, I=1.5, COV_model=cov_block_diag,
                    param_names=['A_p','m_p','A_k','m_k',
-                   'A_KKpipi', 'c0_KKpipi', 'A_piKpiK', 'c0_piKpiK', 'A_CKpi', 
+                   'c0_KKpipi', 'c0_piKpiK', 'A_CKpi', 
                    'DE32'])
 
     best_fits.update({'KpiI12_ratio':CMBI12.corrs[4].interval,
                       'KpiI32_ratio':CMBI32.corrs[4].interval})
 
-    #pickle.dump(best_fits, open('pickles/best_fits_sm'+str(smeared)+'.p','wb'))
+    pickle.dump(best_fits, open('pickles/best_fits_sm'+str(smeared)+'.p','wb'))
     return [pion, kaon, ratios, KpiI12_ratio, KpiI32_ratio], best_fits
 
 

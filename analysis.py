@@ -45,24 +45,22 @@ def cov_block_diag(obj):
     return block_diag(*covs)
 
 def KKpipi_ansatz(params, t, **kwargs):
-    c0, A, m_p = params
-    if 'm_pion' in kwargs.keys():
-        m_p = kwargs['m_pion']
-    return c0 + A*np.exp(2*m_p*t)
+    c0, temp = params
+    temp = 1
+    return c0
 
 def piKpiK_ansatz(params, t, **kwargs):
-    c0, A, m_p = params
-    if 'm_pion' in kwargs.keys():
-        m_p = kwargs['m_pion']
-    return c0 + A*np.exp(-2*m_p*t)
+    c0, temp = params
+    temp = 1
+    return c0
 
 def CKpi_ansatz(params, t, **kwargs):
     A_CKpi, m_p, m_k, DE, c0_KKpipi, c0_piKpiK = params
     EKpi = m_p + m_k + DE
     denom = cosh([1,m_p],t,T=T)*cosh([1,m_k],t,T=T)
     interesting = A_CKpi*cosh([1,EKpi],t,T=T)/denom
-    RTW_KKpipi = c0_KKpipi*np.exp(-m_p*t -m_k*(T-t))/denom
-    RTW_piKpiK = c0_piKpiK*np.exp(-m_k*t -m_p*(T-t))/denom
+    RTW_KKpipi = (c0_KKpipi**2)*np.exp(-m_p*t -m_k*(T-t))/denom
+    RTW_piKpiK = (c0_piKpiK**2)*np.exp(-m_k*t -m_p*(T-t))/denom
 
     return interesting + RTW_KKpipi + RTW_piKpiK
 
@@ -73,9 +71,9 @@ c2 = 6.375183
 def scat_length(params, **kwargs):
     A_p, m_p = params[:2]
     A_k, A_k_sm, m_k = params[2:5]
-    A_KKpipi, A_KKpipi_sm, c0_KKpipi, c0_KKpipi_sm = params[5:9]
-    A_piKpiK, A_piKpiK_sm, c0_piKpiK, c0_piKpiK_sm = params[9:13]
-    A_CKpi, A_CKpi_sm, DE = params[13:16]
+    c0_KKpipi, c0_KKpipi_sm = params[5:7]
+    c0_piKpiK, c0_piKpiK_sm = params[7:9]
+    A_CKpi, A_CKpi_sm, DE = params[9:12]
 
     k0 = DE
     k1 = 2*np.pi*(m_p+m_k)/(m_p*m_k*(L**3))
@@ -88,9 +86,9 @@ def scat_length(params, **kwargs):
 def alt_scat_length(params, **kwargs):
     A_p, m_p = params[:2]
     A_k, A_k_sm, m_k = params[2:5]
-    A_KKpipi, A_KKpipi_sm, c0_KKpipi, c0_KKpipi_sm = params[5:9]
-    A_piKpiK, A_piKpiK_sm, c0_piKpiK, c0_piKpiK_sm = params[9:13]
-    A_CKpi, A_CKpi_sm, DE = params[13:16]
+    c0_KKpipi, c0_KKpipi_sm = params[5:7]
+    c0_piKpiK, c0_piKpiK_sm = params[7:9]
+    A_CKpi, A_CKpi_sm, DE = params[9:12]
 
     mu = m_p*m_k/(m_p+m_k)
     k0 = DE
@@ -101,40 +99,20 @@ def alt_scat_length(params, **kwargs):
     a = np.real(roots[np.isreal(roots)][0])
     return a*mu
 
-def combined_ansatz(params, t, **kwargs):
-
-    A_p, m_p, A_k, m_k = params[:4]
-    A_KKpipi, c0_KKpipi = params[4:6]
-    A_piKpiK, c0_piKpiK = params[6:8]
-    A_CKpi, DE = params[8:]
-
-    pion_part = cosh([A_p,m_p],pion.x,T=T)
-    kaon_part = cosh([A_k,m_k],kaon.x,T=T)
-
-    I_idx = int(kwargs['I']-0.5)
-    KKpipi_part = KKpipi_ansatz([c0_KKpipi,A_KKpipi,m_p],ratios[0+I_idx,2].x)
-    piKpiK_part = piKpiK_ansatz([c0_piKpiK,A_piKpiK,m_p],ratios[2+I_idx,2].x)
-
-    CKpi_part = CKpi_ansatz([A_CKpi, m_p, m_k, DE, c0_KKpipi, c0_piKpiK],
-                            KpiI12_ratio.x if I_idx==0 else KpiI32_ratio.x)
-
-    return np.concatenate((pion_part, kaon_part, KKpipi_part, piKpiK_part,
-                           CKpi_part), axis=0)
-
 def pt_sm_combined(params, t, **kwargs):
     A_p, m_p = params[:2]
     A_k, A_k_sm, m_k = params[2:5]
-    A_KKpipi, A_KKpipi_sm, c0_KKpipi, c0_KKpipi_sm = params[5:9]
-    A_piKpiK, A_piKpiK_sm, c0_piKpiK, c0_piKpiK_sm = params[9:13]
-    A_CKpi, A_CKpi_sm, DE = params[13:16]
+    c0_KKpipi, c0_KKpipi_sm = params[5:7]
+    c0_piKpiK, c0_piKpiK_sm = params[7:9]
+    A_CKpi, A_CKpi_sm, DE = params[9:12]
 
     pion_part = cosh([A_p,m_p],pion.x,T=T)
     kaon_part = cosh([A_k,m_k],kaon.x,T=T)
     kaon_sm_part = cosh([A_k_sm, m_k], kaon_sm.x, T=T)
 
     I_idx = int(kwargs['I']-0.5)
-    KKpipi_part = KKpipi_ansatz([c0_KKpipi,A_KKpipi,m_p],ratios[0+I_idx,2].x)
-    piKpiK_part = piKpiK_ansatz([c0_piKpiK,A_piKpiK,m_p],ratios[2+I_idx,2].x)
+    KKpipi_part = KKpipi_ansatz([c0_KKpipi,0],ratios[0+I_idx,2].x)
+    piKpiK_part = piKpiK_ansatz([c0_piKpiK,0],ratios[2+I_idx,2].x)
     KKpipi_sm_part = KKpipi_ansatz([c0_KKpipi_sm,A_KKpipi_sm,m_p],ratios_sm[0+I_idx,2].x)
     piKpiK_sm_part = piKpiK_ansatz([c0_piKpiK_sm,A_piKpiK_sm,m_p],ratios_sm[2+I_idx,2].x)
 
@@ -150,7 +128,7 @@ from correlation_functions import *
 pion, kaon, ratios, KpiI12_ratio, KpiI32_ratio = get_correlators(data_dir, False) 
 pion2, kaon_sm, ratios_sm, KpiI12_sm_ratio, KpiI32_sm_ratio = get_correlators(data_dir, True)
 
-guess = [2e+4, 0.08, 1e+3, 1e+2, 0.28, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.001]
+guess = [2e+4, 0.08, 1e+3, 1e+2, 0.28, 1.33, 1.33, 0.75, 0.75, 1, 1, 0.001]
 
 # modified hyperweights for combined fits
 hyperweights = {'pvalue_cost':0.5,
@@ -165,11 +143,10 @@ pt_sm_corrI12 = stat_object([pion, kaon, kaon_sm, ratios[0,2], ratios[2,2],
 pt_sm_corrI12.fit((0,pt_sm_corrI12.T-1,1), pt_sm_combined, guess, index=8, 
                   COV_model=cov_block_diag, 
                     I=0.5)
-pt_sm_corrI12.autofit(range(5,15), range(5,15), pt_sm_combined, guess,
+pt_sm_corrI12.autofit(range(8,18), range(5,15), pt_sm_combined, guess,
                   COV_model=cov_block_diag, hyperweights=hyperweights, 
                   param_names=['A_p', 'm_p', 'A_k', 'A_k_sm', 'm_k',
-                  'A_KKpipi', 'A_KKpipi_sm', 'c0_KKpipi', 'c0_KKpipi_sm',
-                  'A_piKpiK', 'A_piKpiK_sm', 'c0_piKpiK', 'c0_piKpiK_sm',
+                  'c0_KKpipi', 'c0_KKpipi_sm', 'c0_piKpiK', 'c0_piKpiK_sm',
                   'A_CKpi', 'A_CKpi_sm', 'DE12'], I=0.5,
                     index=8, pfliter=True, calc_func=[scat_length, alt_scat_length],
                     calc_func_names=['m_p_a0_I12','mu_a0_I12'])
@@ -186,8 +163,7 @@ pt_sm_corrI32.fit((0,pt_sm_corrI32.T-1,1), pt_sm_combined, guess, index=8,
 pt_sm_corrI32.autofit(range(5,15), range(5,15), pt_sm_combined, guess,
                   COV_model=cov_block_diag, hyperweights=hyperweights, 
                   param_names=['A_p', 'm_p', 'A_k', 'A_k_sm', 'm_k',
-                  'A_KKpipi', 'A_KKpipi_sm', 'c0_KKpipi', 'c0_KKpipi_sm',
-                  'A_piKpiK', 'A_piKpiK_sm', 'c0_piKpiK', 'c0_piKpiK_sm',
+                  'c0_KKpipi', 'c0_KKpipi_sm', 'c0_piKpiK', 'c0_piKpiK_sm',
                   'A_CKpi', 'A_CKpi_sm', 'DE32'], I=1.5,
                     index=8, pfliter=True, calc_func=[scat_length, alt_scat_length],
                     calc_func_names=['m_p_a0_I32','mu_a0_I32'])

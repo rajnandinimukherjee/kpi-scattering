@@ -214,8 +214,8 @@ class stat_object:
                 fit_dist[k,:] = self.ansatz(params_dist[k,:], self.t, **self.dict)
             self.params_err = np.array([st_dev(params_dist[:,i], mean=self.params[i])
                                         for i in range(len(self.guess))])
-            self.fit_err = np.array([st_dev(fit_dist[:,t], mean=self.fit_avg[t]) 
-                                     for t in range(len(self.x))])
+            #self.fit_err = np.array([st_dev(fit_dist[:,t], mean=self.fit_avg[t]) 
+            #                         for t in range(len(self.x))])
 
         else:
             params_dist = np.zeros(shape=(self.K,len(self.guess)))
@@ -477,7 +477,7 @@ class stat_object:
                     plt.savefig('plots/'+self.name+'_'+self.dict['calc_func_names'][f]+'_hist.pdf')
 
                 
-    def plot(self, datarange=None, **kwargs):
+    def plot(self, datarange=None, savefig=False, **kwargs):
         x = self.x
         fig = plt.figure()
         if type(datarange) is not np.ndarray:
@@ -496,8 +496,11 @@ class stat_object:
 
         plt.plot(data_x, self.ansatz(self.params, ansatz_t, **self.dict))
         plt.errorbar(data_x, self.data_avg[data_x], yerr=self.input_err[data_x], fmt='o', capsize=4)
-        plt.errorbar(x, self.fit_avg, yerr=self.fit_err, fmt='o', capsize=4)
+        #plt.errorbar(x, self.fit_avg, yerr=self.fit_err, fmt='o', capsize=4)
         plt.title(self.name+' fit')
+        plt.xlabel('$t$')
+        if savefig: 
+            plt.savefig('plots/'+self.name+'_fit.pdf')
 
         if self.ansatz==cosh:
             self.m_eff = m_eff(self.data_avg)
