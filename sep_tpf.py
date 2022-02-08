@@ -1,12 +1,8 @@
 '''
 Author: Rajnandini Mukherjee
 
-Uses the raw data on correlators generated from load_data.py to create
-all correlation functions as class objects of stat_object (calculates
-various statistical information on correlator data), and then fits them
-over various fit ranges (autofit) to find a 'best fit' and saves in
-best_fits_sm(True/False).p file for speedy import later without needing
-to find best fit over and over again. See correlation_functions.py for eg.
+Fits two-point functions separately and uses them as
+input to fit the C_Kpi correlation function.
 
 '''
 
@@ -164,7 +160,12 @@ for corr in [KpiI12_ratio, KpiI32_ratio]: # choosing random guess intervals for 
     corr.correlated = True
 
 def CKpi_ansatz(params, t, **kwargs):
-    A_Ckpi, m_p, m_k, DE, c0_KKpipi, c0_piKpiK = params
+    A_Ckpi, DE, c0_KKpipi, c0_piKpiK = params
+    if kwargs['instance']=='central':
+        m_p, m_k = m_pion, m_kaon
+    else:
+        k = kwargs['k']
+        m_p, m_k = pion.params_dist[k,1], kaon.params_dist[k,1]
     EKpi = m_p + m_k + DE
     denom = cosh([1,m_p],t,T=T)*cosh([1,m_k],t,T=T)
     interesting = A_Ckpi*cosh([1,EKpi],t,T=T)/denom
@@ -174,48 +175,38 @@ def CKpi_ansatz(params, t, **kwargs):
     return interesting + RTW_KKpipi + RTW_piKpiK
 
 def combined_ansatz(params, t, **kwargs):
-    A_p, m_p, A_k, m_k = params[:4]
-    c0_KKpipi, c0_piKpiK = params[4:6]
-    A_CKpi, DE = params[6:]
-
-    pion_part = cosh([A_p,m_p],pion.x,T=T)
-    kaon_part = cosh([A_k,m_k],kaon.x,T=T)
+    A_Ckpi, DE, c0_KKpipi, c0_piKpiK = params
 
     I_idx = int(kwargs['I']-0.5)
     KKpipi_part = KKpipi_ansatz([c0_KKpipi,0],ratios[0+I_idx,3].x)
     piKpiK_part = piKpiK_ansatz([c0_piKpiK,0],ratios[2+I_idx,3].x)
 
-    CKpi_part = CKpi_ansatz([A_CKpi, m_p, m_k, DE, c0_KKpipi, c0_piKpiK], t)
+    CKpi_part = CKpi_ansatz([A_Ckpi, DE, c0_KKpipi, c0_piKpiK], t, **kwargs)
 
-    return np.concatenate((pion_part, kaon_part, KKpipi_part, piKpiK_part,
-                           CKpi_part), axis=0)
+    return np.concatenate((KKpipi_part, piKpiK_part, CKpi_part), axis=0)
 
-guess = [2e+4, 0.08, 1e+3, 0.28, 1.3, 1.3, 1, 0.001]
+guess = [1, 0.001, 1.3, 0.7]
 
-CMBI12 = stat_object([pion,kaon,ratios[0,3],ratios[2,3],KpiI12_ratio], K=K,
+CMBI12 = stat_object([ratios[0,3],ratios[2,3],KpiI12_ratio], K=K,
                     name='CMBI12', object_type='combined')
 CMBI12.fit((0,CMBI12.T-1,1), combined_ansatz, guess, COV_model=cov_block_diag, 
-            I=0.5, index=4)
+            I=0.5, index=2)
 CMBI12.autofit(range(5,15), range(5,15), combined_ansatz, guess,
-               index=4, I=0.5, COV_model=cov_block_diag,
-               param_names=['A_p','m_p','A_k','m_k',
-               'c0_KKpipi', 'c0_piKpiK', 'A_CKpi', 
-               'DE12'])
+               index=2, I=0.5, COV_model=cov_block_diag,
+               param_names=['A_CKpi','DE32','c0_KKpipi', 'c0_piKpiK'])
 
-CMBI32 = stat_object([pion,kaon,ratios[1,3],ratios[3,3],KpiI32_ratio], K=K,
+CMBI32 = stat_object([ratios[1,3],ratios[3,3],KpiI32_ratio], K=K,
                     name='CMBI32', object_type='combined')
 CMBI32.fit((0,CMBI32.T-1,1), combined_ansatz, guess, COV_model=cov_block_diag,
-            I=1.5, index=4)
+            I=1.5, index=2)
 CMBI32.autofit(range(5,15), range(5,15), combined_ansatz, guess,
-               index=4, I=1.5, COV_model=cov_block_diag,
-               param_names=['A_p','m_p','A_k','m_k',
-               'c0_KKpipi', 'c0_piKpiK', 'A_CKpi', 
-               'DE32'])
+               index=2, I=1.5, COV_model=cov_block_diag,
+               param_names=['A_CKpi','DE32','c0_KKpipi', 'c0_piKpiK'])
 
-best_fits.update({'KpiI12_ratio':CMBI12.corrs[4].interval,
-                  'KpiI32_ratio':CMBI32.corrs[4].interval})
+best_fits.update({'KpiI12_ratio':CMBI12.corrs[2].interval,
+                  'KpiI32_ratio':CMBI32.corrs[2].interval})
 
-pickle.dump(best_fits, open('pickles/best_fits_sm'+str(smeared)+'.p','wb'))
+#pickle.dump(best_fits, open('pickles/best_fits_sm'+str(smeared)+'.p','wb'))
 #return [pion, kaon, ratios, KpiI12_ratio, KpiI32_ratio], best_fits
 
 

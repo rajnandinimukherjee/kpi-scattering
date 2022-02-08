@@ -47,12 +47,12 @@ def cov_block_diag(obj):
 def KKpipi_ansatz(params, t, **kwargs):
     c0, temp = params
     temp = 1
-    return c0
+    return np.zeros(t.shape)+c0 
 
 def piKpiK_ansatz(params, t, **kwargs):
     c0, temp = params
     temp = 1
-    return c0
+    return np.zeros(t.shape)+c0 
 
 def CKpi_ansatz(params, t, **kwargs):
     A_CKpi, m_p, m_k, DE, c0_KKpipi, c0_piKpiK = params
@@ -111,10 +111,10 @@ def pt_sm_combined(params, t, **kwargs):
     kaon_sm_part = cosh([A_k_sm, m_k], kaon_sm.x, T=T)
 
     I_idx = int(kwargs['I']-0.5)
-    KKpipi_part = KKpipi_ansatz([c0_KKpipi,0],ratios[0+I_idx,2].x)
-    piKpiK_part = piKpiK_ansatz([c0_piKpiK,0],ratios[2+I_idx,2].x)
-    KKpipi_sm_part = KKpipi_ansatz([c0_KKpipi_sm,A_KKpipi_sm,m_p],ratios_sm[0+I_idx,2].x)
-    piKpiK_sm_part = piKpiK_ansatz([c0_piKpiK_sm,A_piKpiK_sm,m_p],ratios_sm[2+I_idx,2].x)
+    KKpipi_part = KKpipi_ansatz([c0_KKpipi,0],ratios[0+I_idx,3].x)
+    piKpiK_part = piKpiK_ansatz([c0_piKpiK,0],ratios[2+I_idx,3].x)
+    KKpipi_sm_part = KKpipi_ansatz([c0_KKpipi_sm,0],ratios_sm[0+I_idx,3].x)
+    piKpiK_sm_part = piKpiK_ansatz([c0_piKpiK_sm,0],ratios_sm[2+I_idx,3].x)
 
     CKpi_part = CKpi_ansatz([A_CKpi, m_p, m_k, DE, c0_KKpipi, c0_piKpiK], 
                             KpiI12_ratio.x if I_idx==0 else KpiI32_ratio.x)
@@ -131,13 +131,13 @@ pion2, kaon_sm, ratios_sm, KpiI12_sm_ratio, KpiI32_sm_ratio = get_correlators(da
 guess = [2e+4, 0.08, 1e+3, 1e+2, 0.28, 1.33, 1.33, 0.75, 0.75, 1, 1, 0.001]
 
 # modified hyperweights for combined fits
-hyperweights = {'pvalue_cost':0.5,
+hyperweights = {'pvalue_cost':1,
                 'fit_stbl_cost':1,
                 'err_cost':1,
                 'val_stbl_cost':1}
 
-pt_sm_corrI12 = stat_object([pion, kaon, kaon_sm, ratios[0,2], ratios[2,2],
-                          ratios_sm[0,2], ratios_sm[2,2], KpiI12_ratio,
+pt_sm_corrI12 = stat_object([pion, kaon, kaon_sm, ratios[0,3], ratios[2,3],
+                          ratios_sm[0,3], ratios_sm[2,3], KpiI12_ratio,
                           KpiI12_sm_ratio], object_type='combined', K=K,
                           name='pt_sm_corrI12')
 pt_sm_corrI12.fit((0,pt_sm_corrI12.T-1,1), pt_sm_combined, guess, index=8, 
@@ -153,8 +153,8 @@ pt_sm_corrI12.autofit(range(8,18), range(5,15), pt_sm_combined, guess,
 import pprint as pp
 pp.pprint(pt_sm_corrI12.fit_dict)
 
-pt_sm_corrI32 = stat_object([pion, kaon, kaon_sm, ratios[1,2], ratios[3,2],
-                          ratios_sm[1,2], ratios_sm[3,2], KpiI32_ratio,
+pt_sm_corrI32 = stat_object([pion, kaon, kaon_sm, ratios[1,3], ratios[3,3],
+                          ratios_sm[1,3], ratios_sm[3,3], KpiI32_ratio,
                           KpiI32_sm_ratio], object_type='combined', K=K,
                           name='pt_sm_corrI32')
 pt_sm_corrI32.fit((0,pt_sm_corrI32.T-1,1), pt_sm_combined, guess, index=8, 

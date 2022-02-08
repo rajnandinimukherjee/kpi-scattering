@@ -131,26 +131,21 @@ def get_correlators(dir_in_use, smeared, K=100, **kwargs):
             ratio_name = names[j//2]+I[j%2]+'DEL'+str(Delta[i])
             ratios[j,i] = stat_object(ATW_corrs[j][i].samples/denoms[j//2],K=K,
                     data_avg=ATW_corrs[j][i].data_avg/pk_avgs[j//2],name=ratio_name)
-            #if j==0 and i==2:
-            #    print(ratios[j,i].data_avg)
-            ratios[j,i].fit(best_fits[ratio_name], ansatz_list[j//2], [1,1,m_pion],
-                            m_pion=m_pion, correlated=False)
+            ratios[j,i].fit(best_fits[ratio_name], ansatz_list[j//2], [1.3,0])
             ratios[j,i].name = ratios[j,i].name+sm
 
     return pion, kaon, ratios, KpiI12_ratio, KpiI32_ratio
 
 
 def KKpipi_ansatz(params, t, **kwargs):
-    c0, A, m_p = params
-    if 'm_pion' in kwargs.keys():
-        m_p = kwargs['m_pion']
-    return c0 + A*np.exp(2*m_p*t)
+    c0, temp = params
+    temp = 1
+    return np.zeros(t.shape)+c0
 
 def piKpiK_ansatz(params, t, **kwargs):
-    c0, A, m_p = params
-    if 'm_pion' in kwargs.keys():
-        m_p = kwargs['m_pion']
-    return c0 + A*np.exp(-2*m_p*t)
+    c0, temp = params
+    temp = 1
+    return np.zeros(t.shape)+c0
 
 def del_t_binning(data, delta=0, binsize=96, **kwargs): 
     T, cfgs = data.shape[:2]
