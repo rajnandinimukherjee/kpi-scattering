@@ -44,6 +44,7 @@ def cov_block_diag(obj):
 
     return block_diag(*covs)
 
+delta = 1
 def KKpipi_ansatz(params, t, **kwargs):
     c0, A, m_p = params
     if 'm_pion' in kwargs.keys():
@@ -61,6 +62,8 @@ def CKpi_ansatz(params, t, **kwargs):
     EKpi = m_p + m_k + DE
     denom = cosh([1,m_p],t,T=T)*cosh([1,m_k],t,T=T)
     interesting = A_CKpi*cosh([1,EKpi],t,T=T)/denom
+    c0_KKpipi = c0_KKpipi*np.exp(m_k*delta)
+    c0_piKpiK = c0_piKpiK*np.exp(-m_k*delta)
     RTW_KKpipi = c0_KKpipi*np.exp(-m_p*t -m_k*(T-t))/denom
     RTW_piKpiK = c0_piKpiK*np.exp(-m_k*t -m_p*(T-t))/denom
 
@@ -153,7 +156,7 @@ pion2, kaon_sm, ratios_sm, KpiI12_sm_ratio, KpiI32_sm_ratio = get_correlators(da
 guess = [2e+4, 0.08, 1e+3, 1e+2, 0.28, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.001]
 
 # modified hyperweights for combined fits
-hyperweights = {'pvalue_cost':0.5,
+hyperweights = {'pvalue_cost':1,
                 'fit_stbl_cost':1,
                 'err_cost':1,
                 'val_stbl_cost':1}
@@ -165,7 +168,7 @@ pt_sm_corrI12 = stat_object([pion, kaon, kaon_sm, ratios[0,2], ratios[2,2],
 pt_sm_corrI12.fit((0,pt_sm_corrI12.T-1,1), pt_sm_combined, guess, index=8, 
                   COV_model=cov_block_diag, 
                     I=0.5)
-pt_sm_corrI12.autofit(range(5,15), range(5,15), pt_sm_combined, guess,
+pt_sm_corrI12.autofit(range(8,18), range(5,15), pt_sm_combined, guess,
                   COV_model=cov_block_diag, hyperweights=hyperweights, 
                   param_names=['A_p', 'm_p', 'A_k', 'A_k_sm', 'm_k',
                   'A_KKpipi', 'A_KKpipi_sm', 'c0_KKpipi', 'c0_KKpipi_sm',
@@ -203,9 +206,3 @@ df32, dict32 = pt_sm_corrI32.autofit_df, pt_sm_corrI32.autofit_dict
 pickle.dump([df12, df32], open('pickles/pt_sm_dfs.p','wb'))
 pickle.dump([dict12, dict32], open('pickles/pt_sm_dicts.p','wb'))
 
-pt_sm_corrI12.autofit_plot(int_skip=2, plot_params=[14,15], savefig=True, plothist=True, 
-                        hist_deltas=range(8,15), hist_t_min=8)
-plt.close('all')
-pt_sm_corrI32.autofit_plot(int_skip=2, plot_params=[14,15], savefig=True, plothist=True, 
-                        hist_deltas=range(8,15), hist_t_min=8)
-plt.close('all')

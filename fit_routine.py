@@ -238,8 +238,9 @@ class stat_object:
             self.fit_dict['calc_func'] = []
             self.fit_dict['calc_func_err'] = []
             for func in self.dict['calc_func']:
-                func_val = func(self.params, t=self.t)
-                func_dist = np.array([func(self.params_dist[k,:], t=self.t)
+                func_val = func(self.params, t=self.t,instance='central')
+                func_dist = np.array([func(self.params_dist[k,:], t=self.t,
+                                           instance='sample',k=k)
                                       for k in range(self.K)])
                 self.fit_dict['calc_func'].append(func_val)
                 #pdb.set_trace()
@@ -374,7 +375,7 @@ class stat_object:
         return best_int
     
     def autofit_plot(self, plot_params='all', int_skip=1, savefig=False,
-                     pfilter=False, **kwargs):
+                     pfilter=False, plothist=False, **kwargs):
         df = self.autofit_df
         if pfilter:
             df = df[df.pvalue>0.05][df.pvalue<0.95]
@@ -440,41 +441,42 @@ class stat_object:
                 if savefig:
                     plt.savefig('plots/'+self.name+'_'+self.dict['calc_func_names'][f]+'.pdf')
                 
-                plt.figure()
-                plt.suptitle(self.dict['calc_func_names'][f])
-                for t in range(n_t):
-                    plt.subplot(n_t,1,t+1)
-                    if 'hist_deltas' in kwargs.keys():
-                        deltas = kwargs['hist_deltas']
-                    else:
-                        deltas = list(self.autofit_dict['t_ints'])
-                    df_t = df[df.int.str[2]==t+1]
-                    if 'hist_t_min' in kwargs.keys():
-                        tmin = kwargs['hist_t_min']
-                        df_t = df_t[df_t.int.str[0]>=tmin]
+                if plothist:
+                    plt.figure()
+                    plt.suptitle(self.dict['calc_func_names'][f])
+                    for t in range(n_t):
+                        plt.subplot(n_t,1,t+1)
+                        if 'hist_deltas' in kwargs.keys():
+                            deltas = kwargs['hist_deltas']
+                        else:
+                            deltas = list(self.autofit_dict['t_ints'])
+                        df_t = df[df.int.str[2]==t+1]
+                        if 'hist_t_min' in kwargs.keys():
+                            tmin = kwargs['hist_t_min']
+                            df_t = df_t[df_t.int.str[0]>=tmin]
 
-                    stack = [np.array(df_t.calc_func[(df_t.int.str[1]-df_t.int.str[0])==diff].str[0])
-                            for diff in deltas]
-                    a, b, fig = plt.hist(stack, stacked=True, 
-                                label=[str(i) for i in deltas])
-                    spacing = b[1]-b[0]
-                    err_abs = (b[-1]-b[0])/4
-                    self.fit_dict['calc_func_sys_err'][f] = err_abs
+                        stack = [np.array(df_t.calc_func[(df_t.int.str[1]-df_t.int.str[0])==diff].str[0])
+                                for diff in deltas]
+                        a, b, fig = plt.hist(stack, stacked=True, 
+                                    label=[str(i) for i in deltas])
+                        spacing = b[1]-b[0]
+                        err_abs = (b[-1]-b[0])/4
+                        self.fit_dict['calc_func_sys_err'][f] = err_abs
 
-                    val = float(self.fit_dict['calc_func'][f])
-                    plt.axvline(val, c='k', label='value')
+                        val = float(self.fit_dict['calc_func'][f])
+                        plt.axvline(val, c='k', label='value')
 
-                    err = float(self.fit_dict['calc_func_err'][f])
-                    y_lo, y_up = plt.ylim()
-                    x = np.linspace(val-err, val+err, 10)
-                    plt.fill_between(x, y_lo, y_up, alpha=0.2, color='k', label='error')
-                    plt.ylim(top=y_up)
-                    plt.ylim(bottom=y_lo)
+                        err = float(self.fit_dict['calc_func_err'][f])
+                        y_lo, y_up = plt.ylim()
+                        x = np.linspace(val-err, val+err, 10)
+                        plt.fill_between(x, y_lo, y_up, alpha=0.2, color='k', label='error')
+                        plt.ylim(top=y_up)
+                        plt.ylim(bottom=y_lo)
 
-                    plt.legend(title='$\delta t$', bbox_to_anchor=(1.05,1.0), loc='upper left')
-                    plt.tight_layout()
-                if savefig:
-                    plt.savefig('plots/'+self.name+'_'+self.dict['calc_func_names'][f]+'_hist.pdf')
+                        plt.legend(title='$\delta t$', bbox_to_anchor=(1.05,1.0), loc='upper left')
+                        plt.tight_layout()
+                    if savefig:
+                        plt.savefig('plots/'+self.name+'_'+self.dict['calc_func_names'][f]+'_hist.pdf')
 
                 
     def plot(self, datarange=None, **kwargs):
