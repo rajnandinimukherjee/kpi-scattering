@@ -1,8 +1,9 @@
 '''
 Author: Rajnandini Mukherjee
 
-Primary analysis code which runs loops of fit ranges of the C_Kpi correlator,
-in a combined fit with pion and kaon two-point functions, and other correlation
+Double fitting analysis code which runs loops of fit ranges of both the C_Kpi 
+correlators - with point-like kaon sources and smeared kaon sources,in a 
+combined fit with pion and kaon two-point functions, and other correlation
 functions with information on around-the-world (ATW) matrix elements, to single
 out the value of Delta E_Kpi and hence the scattering length. The data for point
 and smeared sources is also combined for one big global fit in each of the 
@@ -161,48 +162,50 @@ hyperweights = {'pvalue_cost':1,
                 'err_cost':1,
                 'val_stbl_cost':1}
 
-pt_sm_corrI12 = stat_object([pion, kaon, kaon_sm, ratios[0,2], ratios[2,2],
-                          ratios_sm[0,2], ratios_sm[2,2], KpiI12_ratio,
-                          KpiI12_sm_ratio], object_type='combined', K=K,
-                          name='pt_sm_corrI12')
-pt_sm_corrI12.fit((0,pt_sm_corrI12.T-1,1), pt_sm_combined, guess, index=8, 
-                  COV_model=cov_block_diag, 
-                    I=0.5)
-pt_sm_corrI12.autofit(range(8,18), range(5,15), pt_sm_combined, guess,
-                  COV_model=cov_block_diag, hyperweights=hyperweights, 
-                  param_names=['A_p', 'm_p', 'A_k', 'A_k_sm', 'm_k',
-                  'A_KKpipi', 'A_KKpipi_sm', 'c0_KKpipi', 'c0_KKpipi_sm',
-                  'A_piKpiK', 'A_piKpiK_sm', 'c0_piKpiK', 'c0_piKpiK_sm',
-                  'A_CKpi', 'A_CKpi_sm', 'DE12'], I=0.5,
-                    index=8, pfliter=True, calc_func=[scat_length, alt_scat_length],
-                    calc_func_names=['m_p_a0_I12','mu_a0_I12'])
-import pprint as pp
-pp.pprint(pt_sm_corrI12.fit_dict)
+double_fit12_dict = {}
+double_fit32_dict = {}
 
-pt_sm_corrI32 = stat_object([pion, kaon, kaon_sm, ratios[1,2], ratios[3,2],
-                          ratios_sm[1,2], ratios_sm[3,2], KpiI32_ratio,
-                          KpiI32_sm_ratio], object_type='combined', K=K,
-                          name='pt_sm_corrI32')
-pt_sm_corrI32.fit((0,pt_sm_corrI32.T-1,1), pt_sm_combined, guess, index=8, 
-                  COV_model=cov_block_diag, 
-                    I=1.5)
-pt_sm_corrI32.autofit(range(5,15), range(5,15), pt_sm_combined, guess,
-                  COV_model=cov_block_diag, hyperweights=hyperweights, 
-                  param_names=['A_p', 'm_p', 'A_k', 'A_k_sm', 'm_k',
-                  'A_KKpipi', 'A_KKpipi_sm', 'c0_KKpipi', 'c0_KKpipi_sm',
-                  'A_piKpiK', 'A_piKpiK_sm', 'c0_piKpiK', 'c0_piKpiK_sm',
-                  'A_CKpi', 'A_CKpi_sm', 'DE32'], I=1.5,
-                    index=8, pfliter=True, calc_func=[scat_length, alt_scat_length],
-                    calc_func_names=['m_p_a0_I32','mu_a0_I32'])
+for pt_t_min in range(8,15):
+    for pt_delta_t in range(5,15):
+        KpiI12_ratio.interval = (pt_t_min, pt_delta_t,1)
+        KpiI12_ratio.x = np.arange(pt_t_min, pt_delta_t+1,1)
+        double_fit12_dict[str(KpiI12_ratio.interval)] = {'pt_int':KpiI12_ratio.interval}
 
-pp.pprint(pt_sm_corrI32.fit_dict)
+        KpiI32_ratio.interval = (pt_t_min, pt_delta_t,1)
+        KpiI32_ratio.x = np.arange(pt_t_min, pt_delta_t+1,1)
+        double_fit32_dict[str(KpiI32_ratio.interval)] = {'pt_int':Kpi312_ratio.interval}
 
-fit_intervals = {corr.name:corr.interval for corr in pt_sm_corrI12.corrs}
-fit_intervals.update({corr.name:corr.interval for corr in pt_sm_corrI32.corrs})
-pickle.dump(fit_intervals,open('pickles/fit_intervals.p','wb'))
+        for sm_t_min in range(5,15):
+            for sm_delta_t in range(5,15):
+                KpiI12_sm_ratio.interval = (sm_t_min, sm_delta_t,1)
+                KpiI12_sm_ratio.x = np.arange(sm_t_min, sm_delta_t+1,1)
 
-df12, dict12 = pt_sm_corrI12.autofit_df, pt_sm_corrI12.autofit_dict
-df32, dict32 = pt_sm_corrI32.autofit_df, pt_sm_corrI32.autofit_dict
-pickle.dump([df12, df32], open('pickles/pt_sm_dfs.p','wb'))
-pickle.dump([dict12, dict32], open('pickles/pt_sm_dicts.p','wb'))
+                KpiI32_sm_ratio.interval = (sm_t_min, sm_delta_t,1)
+                KpiI32_sm_ratio.x = np.arange(sm_t_min, sm_delta_t+1,1)
+
+                pt_sm_corrI12 = stat_object([pion, kaon, kaon_sm, ratios[0,2], ratios[2,2],
+                                          ratios_sm[0,2], ratios_sm[2,2], KpiI12_ratio,
+                                          KpiI12_sm_ratio], object_type='combined', K=K,
+                                          name='pt_sm_corrI12')
+                pt_sm_corrI12.fit((0,pt_sm_corrI12.T-1,1), pt_sm_combined, guess, 
+                                  COV_model=cov_block_diag, I=0.5, index=8, 
+                                  calc_func=[scat_length, alt_scat_length])
+
+                double_fit12_dict[str(KpiI12_ratio.interval)].append{pt_sm_corrI12.fit_dict}
+                            
+                pt_sm_corrI32 = stat_object([pion, kaon, kaon_sm, ratios[1,2], ratios[3,2],
+                                          ratios_sm[1,2], ratios_sm[3,2], KpiI32_ratio,
+                                          KpiI32_sm_ratio], object_type='combined', K=K,
+                                          name='pt_sm_corrI32')
+                pt_sm_corrI32.fit((0,pt_sm_corrI32.T-1,1), pt_sm_combined, guess, 
+                                  COV_model=cov_block_diag, I=1.5, index=8, 
+                                  calc_func=[scat_length, alt_scat_length])
+
+                double_fit32_dict[str(KpiI32_ratio.interval)].append{pt_sm_corrI32.fit_dict}
+
+import pandas as pd
+double_fit12_df = pd.DataFrame(double_fit12_dict.values())
+double_fit32_df = pd.DataFrame(double_fit32_dict.values())
+import pickle
+pickle.dump([double_fit12_df, double_fit32_df],open('pickles/double_fit_dfs.p','wb'))
 
