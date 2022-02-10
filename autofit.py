@@ -168,6 +168,8 @@ def CKpi_ansatz(params, t, **kwargs):
     EKpi = m_p + m_k + DE
     denom = cosh([1,m_p],t,T=T)*cosh([1,m_k],t,T=T)
     interesting = A_Ckpi*cosh([1,EKpi],t,T=T)/denom
+    c0_KKpipi = c0_KKpipi*np.exp(m_k*delta)
+    c0_piKpiK = c0_piKpiK*np.exp(-m_k*delta)
     RTW_KKpipi = (c0_KKpipi**2)*np.exp(-m_p*t -m_k*(T-t))/denom
     RTW_piKpiK = (c0_piKpiK**2)*np.exp(-m_k*t -m_p*(T-t))/denom
 
