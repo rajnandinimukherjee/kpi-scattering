@@ -156,8 +156,8 @@ pion2, kaon_sm, ratios_sm, KpiI12_sm_ratio, KpiI32_sm_ratio = get_correlators(da
 guess = [2e+4, 0.08, 1e+3, 1e+2, 0.28, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.001]
 
 # modified hyperweights for combined fits
-hyperweights = {'pvalue_cost':1,
-                'fit_stbl_cost':1,
+hyperweights = {'pvalue_cost':0.5,
+                'fit_stbl_cost':0.5,
                 'err_cost':1,
                 'val_stbl_cost':1}
 
@@ -205,4 +205,47 @@ df12, dict12 = pt_sm_corrI12.autofit_df, pt_sm_corrI12.autofit_dict
 df32, dict32 = pt_sm_corrI32.autofit_df, pt_sm_corrI32.autofit_dict
 pickle.dump([df12, df32], open('pickles/pt_sm_dfs.p','wb'))
 pickle.dump([dict12, dict32], open('pickles/pt_sm_dicts.p','wb'))
+
+pt_sm_corrI12.autofit_plot(int_skip=2, plot_params=[15], plothist=True)
+pt_sm_corrI32.autofit_plot(int_skip=2, plot_params=[15], plothist=True)
+
+from fit_ranges import *
+
+pt_sm_corrI12.fit_dict['calc_func_sys_err'] = [pt_t_min_var(0.5,pfliter=True,func=0),
+                                               pt_t_min_var(0.5,pfliter=True, func=1)]
+pt_sm_corrI32.fit_dict['calc_func_sys_err'] = [pt_t_min_var(1.5,pfliter=True,func=0),
+                                               pt_t_min_var(1.5,pfliter=True, func=1)]
+
+lat12 = {'m_p':pt_sm_corrI12.params[1],
+         'm_k':pt_sm_corrI12.params[4],
+         'DE':pt_sm_corrI12.params[15],
+         'a0':pt_sm_corrI12.fit_dict['calc_func'][0],
+         'a0_stat':pt_sm_corrI12.fit_dict['calc_func_err'][0],
+         'a0_sys':pt_sm_corrI12.fit_dict['calc_func_sys_err'][0]}
+
+lat32 = {'m_p':pt_sm_corrI32.params[1],
+         'm_k':pt_sm_corrI32.params[4],
+         'DE':pt_sm_corrI32.params[15],
+         'a0':pt_sm_corrI32.fit_dict['calc_func'][0],
+         'a0_stat':pt_sm_corrI32.fit_dict['calc_func_err'][0],
+         'a0_sys':pt_sm_corrI32.fit_dict['calc_func_sys_err'][0]}
+
+from errors import load_errors
+errors, errors_pc = load_errors(lat12, lat32)
+
+def net_sys(I, **kwargs):
+    iso = 'I=1/2' if I==0.5 else 'I=3/2'
+    var = 0
+    for k in errors_pc.keys():
+        var = var + ((errors_pc[k][iso])**2)
+    var = var+2
+    #print((var**0.5)/100)
+    return (var**0.5)/100
+
+final_results = {'I=1/2':{'val':lat12['a0'],
+                          'stat err':lat12['a0_stat'],
+                          'sys err':np.abs(lat12['a0']*net_sys(I=0.5))},
+                 'I=3/2':{'val':lat32['a0'],
+                          'stat err':lat32['a0_stat'],
+                          'sys err':np.abs(lat32['a0']*net_sys(I=1.5))}}
 

@@ -16,7 +16,7 @@ def pf(d, **kwargs):
     return d_fil
 
 #===variations with pt t_min===========================
-def pt_t_min_var(I, pfilter=False, **kwargs):
+def pt_t_min_var(I, pfilter=False, func=0, **kwargs):
     d = da12 if I==0.5 else da32
     if pfilter:
         d = pf(d)
@@ -27,13 +27,15 @@ def pt_t_min_var(I, pfilter=False, **kwargs):
         for key1 in d.keys():
             for key2 in d[key1].keys():
                 if int(re.findall("\d+",key1)[0])==t_min:
-                    scat = d[key1][key2]['calc_func'][0]
+                    scat = d[key1][key2]['calc_func'][func]
                     t_stack = np.append(t_stack,scat)
         stack.append(t_stack)
 
     plt.figure()
-    plt.hist(stack, stacked=True, 
+    a, b, fig = plt.hist(stack, stacked=True, 
              label=[str(i) for i in range(8, 15)])
+    err = np.abs(b[-1]-b[0])/4
+    #print(f'sys err:{err}')
     plt.legend(title="pt $t_{min}$", 
                bbox_to_anchor=(1.05, 1.0),
                loc="upper left")
@@ -41,9 +43,11 @@ def pt_t_min_var(I, pfilter=False, **kwargs):
     a0_str = "$a_0^{I=1/2}$" if I==0.5 else "$a_0^{I=3/2}$"
     plt.xlabel(a0_str)
     plt.title("Variation with $t_{min}$ of pt-$C_{K\pi}$")
+    return err
+
 
 #===variation with pt delta_t============================
-def pt_del_t_var(I, pfilter=False, **kwargs):
+def pt_del_t_var(I, pfilter=False, func=0, **kwargs):
     d = da12 if I==0.5 else da32
     if pfilter:
         d = pf(d)
@@ -54,13 +58,15 @@ def pt_del_t_var(I, pfilter=False, **kwargs):
         for key1 in d.keys():
             for key2 in d[key1].keys():
                 if int(re.findall("\d+",key1)[1])-int(re.findall("\d+",key1)[0])==delta_t:
-                    scat = d[key1][key2]['calc_func'][0]
+                    scat = d[key1][key2]['calc_func'][func]
                     t_stack = np.append(t_stack,scat)
         stack.append(t_stack)
 
     plt.figure()
-    plt.hist(stack, stacked=True, 
-             label=[str(i) for i in range(5, 12)])
+    a, b, fig = plt.hist(stack, stacked=True, 
+             label=[str(i) for i in range(8, 15)])
+    err = np.abs(b[-1]-b[0])/4
+    #print(f'sys err:{err}')
     plt.legend(title="pt $\delta t$", 
                bbox_to_anchor=(1.05, 1.0),
                loc="upper left")
@@ -68,26 +74,29 @@ def pt_del_t_var(I, pfilter=False, **kwargs):
     a0_str = "$a_0^{I=1/2}$" if I==0.5 else "$a_0^{I=3/2}$"
     plt.xlabel(a0_str)
     plt.title("Variation with $\delta t$ of pt-$C_{K\pi}$")
+    return err
 
 #===variations with sm t_min===========================
-def sm_t_min_var(I, pfilter=False, **kwargs):
+def sm_t_min_var(I, pfilter=False, func=0, **kwargs):
     d = da12 if I==0.5 else da32
     if pfilter:
         d = pf(d)
 
     stack = []
-    for t_min in range(5,12):
+    for t_min in range(8,15):
         t_stack = np.array([])
         for key1 in d.keys():
             for key2 in d[key1].keys():
                 if int(re.findall("\d+",key2)[0])==t_min:
-                    scat = d[key1][key2]['calc_func'][0]
+                    scat = d[key1][key2]['calc_func'][func]
                     t_stack = np.append(t_stack,scat)
         stack.append(t_stack)
 
     plt.figure()
-    plt.hist(stack, stacked=True, 
-             label=[str(i) for i in range(5, 12)])
+    a, b, fig = plt.hist(stack, stacked=True, 
+             label=[str(i) for i in range(8, 15)])
+    err = np.abs(b[-1]-b[0])/4
+    #print(f'sys err:{err}')
     plt.legend(title="sm $t_{min}$", 
                bbox_to_anchor=(1.05, 1.0),
                loc="upper left")
@@ -95,9 +104,10 @@ def sm_t_min_var(I, pfilter=False, **kwargs):
     a0_str = "$a_0^{I=1/2}$" if I==0.5 else "$a_0^{I=3/2}$"
     plt.xlabel(a0_str)
     plt.title("Variation with $t_{min}$ of sm-$C_{K\pi}$")
+    return err
 
 #===variation with sm delta_t============================
-def sm_del_t_var(I, pfilter=False, **kwargs):
+def sm_del_t_var(I, pfilter=False, func=0, **kwargs):
     d = da12 if I==0.5 else da32
     if pfilter:
         d = pf(d)
@@ -108,13 +118,15 @@ def sm_del_t_var(I, pfilter=False, **kwargs):
         for key1 in d.keys():
             for key2 in d[key1].keys():
                 if int(re.findall("\d+",key2)[1])-int(re.findall("\d+",key1)[0])==delta_t:
-                    scat = d[key1][key2]['calc_func'][0]
+                    scat = d[key1][key2]['calc_func'][func]
                     t_stack = np.append(t_stack,scat)
         stack.append(t_stack)
 
     plt.figure()
-    plt.hist(stack, stacked=True, 
-             label=[str(i) for i in range(5, 12)])
+    a, b, fig = plt.hist(stack, stacked=True, 
+             label=[str(i) for i in range(8, 15)])
+    err = np.abs(b[-1]-b[0])/4
+    #print(f'sys err:{err}')
     plt.legend(title="sm $\delta t$", 
                bbox_to_anchor=(1.05, 1.0),
                loc="upper left")
@@ -122,4 +134,5 @@ def sm_del_t_var(I, pfilter=False, **kwargs):
     a0_str = "$a_0^{I=1/2}$" if I==0.5 else "$a_0^{I=3/2}$"
     plt.xlabel(a0_str)
     plt.title("Variation with $\delta t$ of sm-$C_{K\pi}$")
+    return err
 
