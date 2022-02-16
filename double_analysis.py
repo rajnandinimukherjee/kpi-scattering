@@ -165,23 +165,30 @@ hyperweights = {'pvalue_cost':1,
 double_fit12_dict = {}
 double_fit32_dict = {}
 
+import warnings
+warnings.filterwarnings('ignore')
+
+from tqdm import tqdm
+pbar = tqdm(total=7*7*7*7)
 for pt_t_min in range(8,15):
-    for pt_delta_t in range(5,15):
-        KpiI12_ratio.interval = (pt_t_min, pt_delta_t,1)
-        KpiI12_ratio.x = np.arange(pt_t_min, pt_delta_t+1,1)
-        double_fit12_dict[str(KpiI12_ratio.interval)] = {'pt_int':KpiI12_ratio.interval}
+    for pt_delta_t in range(5,12):
+        KpiI12_ratio.interval = (pt_t_min, pt_t_min+pt_delta_t,1)
+        KpiI12_ratio.x = np.arange(pt_t_min, pt_t_min+pt_delta_t+1,1)
+        double_fit12_dict[str(KpiI12_ratio.interval)] = {}
 
-        KpiI32_ratio.interval = (pt_t_min, pt_delta_t,1)
-        KpiI32_ratio.x = np.arange(pt_t_min, pt_delta_t+1,1)
-        double_fit32_dict[str(KpiI32_ratio.interval)] = {'pt_int':Kpi312_ratio.interval}
+        KpiI32_ratio.interval = (pt_t_min, pt_t_min+pt_delta_t,1)
+        KpiI32_ratio.x = np.arange(pt_t_min, pt_t_min+pt_delta_t+1,1)
+        double_fit32_dict[str(KpiI32_ratio.interval)] = {}
 
-        for sm_t_min in range(5,15):
-            for sm_delta_t in range(5,15):
-                KpiI12_sm_ratio.interval = (sm_t_min, sm_delta_t,1)
-                KpiI12_sm_ratio.x = np.arange(sm_t_min, sm_delta_t+1,1)
+        for sm_t_min in range(8,15):
+            for sm_delta_t in range(5,12):
+                KpiI12_sm_ratio.interval = (sm_t_min, sm_t_min+sm_delta_t,1)
+                KpiI12_sm_ratio.x = np.arange(sm_t_min, sm_t_min+sm_delta_t+1,1)
+                double_fit12_dict[str(KpiI12_ratio.interval)][str(KpiI12_sm_ratio.interval)] = {}
 
-                KpiI32_sm_ratio.interval = (sm_t_min, sm_delta_t,1)
-                KpiI32_sm_ratio.x = np.arange(sm_t_min, sm_delta_t+1,1)
+                KpiI32_sm_ratio.interval = (sm_t_min, sm_t_min+sm_delta_t,1)
+                KpiI32_sm_ratio.x = np.arange(sm_t_min, sm_t_min+sm_delta_t+1,1)
+                double_fit32_dict[str(KpiI32_ratio.interval)][str(KpiI32_sm_ratio.interval)] = {}
 
                 pt_sm_corrI12 = stat_object([pion, kaon, kaon_sm, ratios[0,2], ratios[2,2],
                                           ratios_sm[0,2], ratios_sm[2,2], KpiI12_ratio,
@@ -190,9 +197,8 @@ for pt_t_min in range(8,15):
                 pt_sm_corrI12.fit((0,pt_sm_corrI12.T-1,1), pt_sm_combined, guess, 
                                   COV_model=cov_block_diag, I=0.5, index=8, 
                                   calc_func=[scat_length, alt_scat_length])
+                double_fit12_dict[str(KpiI12_ratio.interval)][str(KpiI12_sm_ratio.interval)].update(pt_sm_corrI12.fit_dict)
 
-                double_fit12_dict[str(KpiI12_ratio.interval)].append{pt_sm_corrI12.fit_dict}
-                            
                 pt_sm_corrI32 = stat_object([pion, kaon, kaon_sm, ratios[1,2], ratios[3,2],
                                           ratios_sm[1,2], ratios_sm[3,2], KpiI32_ratio,
                                           KpiI32_sm_ratio], object_type='combined', K=K,
@@ -200,12 +206,10 @@ for pt_t_min in range(8,15):
                 pt_sm_corrI32.fit((0,pt_sm_corrI32.T-1,1), pt_sm_combined, guess, 
                                   COV_model=cov_block_diag, I=1.5, index=8, 
                                   calc_func=[scat_length, alt_scat_length])
+                double_fit32_dict[str(KpiI32_ratio.interval)][str(KpiI32_sm_ratio.interval)].update(pt_sm_corrI32.fit_dict)
+                pbar.update()
 
-                double_fit32_dict[str(KpiI32_ratio.interval)].append{pt_sm_corrI32.fit_dict}
 
-import pandas as pd
-double_fit12_df = pd.DataFrame(double_fit12_dict.values())
-double_fit32_df = pd.DataFrame(double_fit32_dict.values())
 import pickle
-pickle.dump([double_fit12_df, double_fit32_df],open('pickles/double_fit_dfs.p','wb'))
+pickle.dump([double_fit12_dict, double_fit32_dict],open('pickles/double_fit_dicts.p','wb'))
 

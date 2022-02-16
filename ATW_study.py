@@ -261,8 +261,8 @@ def ATW_study(I, **kwargs):
     return ratio_ATW, ratio_err
     
 
-#rat12, err12 = ATW_study(I=0.5)
-#rat32, err32 = ATW_study(I=1.5)
+rat12, err12 = ATW_study(I=0.5)
+rat32, err32 = ATW_study(I=1.5)
 
 def ATW_fits(I=0.5, **kwargs):
     corr = KpiI12_ratio if I==0.5 else KpiI32_ratio 
@@ -276,5 +276,5 @@ def ATW_fits(I=0.5, **kwargs):
              ATW=False, I=I, param_names=['A_CKpi','$\Delta E_{K\pi}^{'+I_str+'}$ without ATW'])
     corr.autofit_plot(plot_params=[1])
 
-#ATW_fits(I=0.5)
-#ATW_fits(I=1.5)
+ATW_fits(I=0.5)
+ATW_fits(I=1.5)

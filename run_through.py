@@ -54,6 +54,7 @@ def piKpiK_ansatz(params, t, **kwargs):
         m_p = kwargs['m_pion']
     return c0 + A*np.exp(-2*m_p*t)
 
+delta = 1
 def CKpi_ansatz(params, t, **kwargs):
     A_CKpi, m_p, m_k, DE, c0_KKpipi, c0_piKpiK = params
     EKpi = m_p + m_k + DE
