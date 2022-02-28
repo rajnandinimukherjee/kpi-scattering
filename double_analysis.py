@@ -169,9 +169,9 @@ import warnings
 warnings.filterwarnings('ignore')
 
 from tqdm import tqdm
-pbar = tqdm(total=7*7*7*7)
-for pt_t_min in range(8,15):
-    for pt_delta_t in range(5,12):
+pbar = tqdm(total=11*10*11*10)
+for pt_t_min in range(8,19):
+    for pt_delta_t in range(5,15):
         KpiI12_ratio.interval = (pt_t_min, pt_t_min+pt_delta_t,1)
         KpiI12_ratio.x = np.arange(pt_t_min, pt_t_min+pt_delta_t+1,1)
         double_fit12_dict[str(KpiI12_ratio.interval)] = {}
@@ -180,8 +180,8 @@ for pt_t_min in range(8,15):
         KpiI32_ratio.x = np.arange(pt_t_min, pt_t_min+pt_delta_t+1,1)
         double_fit32_dict[str(KpiI32_ratio.interval)] = {}
 
-        for sm_t_min in range(8,15):
-            for sm_delta_t in range(5,12):
+        for sm_t_min in range(8,19):
+            for sm_delta_t in range(5,15):
                 KpiI12_sm_ratio.interval = (sm_t_min, sm_t_min+sm_delta_t,1)
                 KpiI12_sm_ratio.x = np.arange(sm_t_min, sm_t_min+sm_delta_t+1,1)
                 double_fit12_dict[str(KpiI12_ratio.interval)][str(KpiI12_sm_ratio.interval)] = {}
