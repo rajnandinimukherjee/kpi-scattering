@@ -182,7 +182,7 @@ def heatmap(I,func=0, cuts=False, **kwargs):
     
 
     fig, ax = plt.subplots()
-    im = ax.imshow(scat_2D)
+    im = ax.imshow(pval)
     cbar = ax.figure.colorbar(im, ax=ax)
     cbar.ax.set_ylabel(label, rotation=90, va="bottom")
 
@@ -280,8 +280,8 @@ def make_all_subplots(I):
     fig4 = heatmap_subplots(I, corr="sm", fix="t_max")
 
     
-def choices(I, pt_t_min=9, pt_t_max=18, 
-               sm_t_min=8, sm_t_max=18, **kwargs):
+def choices(I, pt_t_min=9, pt_t_max=19, 
+               sm_t_min=8, sm_t_max=19, **kwargs):
     d = da12 if I==0.5 else da32
     new_d = {}
     for key1 in d.keys():
@@ -294,7 +294,7 @@ def choices(I, pt_t_min=9, pt_t_max=18,
                     new_d[key1][key2] = d[key1][key2]
     return new_d
 
-def plot_linear(I, cuts=False, func=0,  **kwargs):
+def plot_linear(I, cuts=False, func=0, pcut=0.1,  **kwargs):
 
     d = da12 if I==0.5 else da32
     if cuts:
@@ -312,9 +312,10 @@ def plot_linear(I, cuts=False, func=0,  **kwargs):
     err = []
     for key1 in k1:
         for key2 in k2:
-            x.append(key1+key2)
-            y.append(d[key1][key2]['calc_func'][func])
-            err.append(d[key1][key2]['calc_func_err'][func])
+            if d[key1][key2]['pvalue']>pcut:
+                x.append(key1+key2)
+                y.append(d[key1][key2]['calc_func'][func])
+                err.append(d[key1][key2]['calc_func_err'][func])
 
     plt.figure()
     plt.errorbar(x,y, yerr=err, capsize=4, fmt='o')
