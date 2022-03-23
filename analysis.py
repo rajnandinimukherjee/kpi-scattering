@@ -247,5 +247,5 @@ final_results = {'I=1/2':{'val':lat12['a0'],
                           'sys err':np.abs(lat12['a0']*net_sys(I=0.5))},
                  'I=3/2':{'val':lat32['a0'],
                           'stat err':lat32['a0_stat'],
-                          'sys err':np.abs(lat32['a0']*net_sys(I=1.5))}}
+                          'sys err':np.abs(lat32['a0']*net_sys(I=0.5))}}
 

@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import colors
+import matplotlib.cm as cm
 from plot_settings import plotparams
 plt.rcParams.update(plotparams)
 import sys
@@ -294,6 +296,7 @@ class stat_object:
         self.autofit_df = pd.DataFrame(self.autofit_dict.values())
         self.autofit_dict = {'t_mins': t_min_range,
                              't_ints': fit_ints,
+                             't_maxs': list(set(self.autofit_df.int.str[1])),
                              'thin_list': thin_list} 
         best_int = self.best_fit(**self.dict)
 
@@ -375,7 +378,7 @@ class stat_object:
         return best_int
     
     def autofit_plot(self, plot_params='all', int_skip=1, savefig=False,
-                     pfilter=False, plothist=False, **kwargs):
+                     pfilter=False, legend='t_maxs', plothist=False, **kwargs):
         df = self.autofit_df
         if pfilter:
             df = df[df.pvalue>0.05][df.pvalue<0.95]
@@ -387,57 +390,89 @@ class stat_object:
             param_idx = np.arange(len(self.guess))
         else:
             param_idx = plot_params
+        
+        cmap = plt.cm.tab20b
+        legend_vals = np.array(self.autofit_dict[legend])
+        norm = colors.BoundaryNorm(legend_vals, cmap.N)
 
         for p in param_idx:
-            plt.figure()
-            plt.suptitle(self.param_names[p])
+            fig, ax = plt.subplots(n_t)
+            fig.suptitle(self.param_names[p])
             for t in range(n_t):
-                plt.subplot(n_t,1,t+1)
-                for idx, t_int in enumerate(self.autofit_dict['t_ints']):
+                for idx, leg in enumerate(legend_vals):
                     if idx%int_skip==0:
-                        x = df.int[df.int.str[1]-df.int.str[0]==t_int]
-                        x = x[df.int.str[2]==thin[t]].str[0]
-                        y = df.params[df.int.str[1]-df.int.str[0]==t_int]
-                        y = y[df.int.str[2]==thin[t]].str[p]
-                        yerr = df.params_err[df.int.str[1]-df.int.str[0]==t_int]
-                        yerr = yerr[df.int.str[2]==thin[t]].str[p]
+                        if legend=='t_maxs':
+                            x = df.int[df.int.str[1]==leg]
+                            y = df.params[df.int.str[1]==leg]
+                            yerr = df.params_err[df.int.str[1]==leg]
+                        elif legend=='t_ints':
+                            x = df.int[df.int.str[1]-df.int.str[0]==leg]
+                            y = df.params[df.int.str[1]-df.int.str[0]==leg]
+                            yerr = df.params_err[df.int.str[1]-df.int.str[0]==leg]
 
-                        markers, caps, bars = plt.errorbar(x, y, yerr=yerr,
-                                            capsize=4, label=str(t_int),
-                                            linestyle='None', fmt='o')
-                        [bar.set_alpha(0.5) for bar in bars]
-                        [cap.set_alpha(0.5) for cap in caps]
-                plt.legend(loc=1, bbox_to_anchor=(0.985,0.89),
-                            bbox_transform=plt.gcf().transFigure)
-            plt.xlabel('$t_{min}$')
+                        x = x[df.int.str[2]==thin[t]].str[0]
+                        y = y[df.int.str[2]==thin[t]].str[p]
+                        yerr = yerr[df.int.str[2]==thin[t]].str[p]
+                        
+                        if n_t>1:
+                            im = ax[t].errorbar(x, y, yerr=yerr,
+                                 capsize=4, c=cmap(norm(leg)), 
+                                 linestyle='None', fmt='o')
+                        else:
+                            im = ax.errorbar(x, y, yerr=yerr,
+                                 capsize=4, c=cmap(norm(leg)), 
+                                 linestyle='None', fmt='o')
+                            
+            sm = cm.ScalarMappable(cmap=cmap, norm=norm)
+            sm.set_array([])
+            fig.subplots_adjust(right=0.8)
+            cbar_ax = fig.add_axes([0.85, 0.15, 0.02, 0.7])
+            cbar = plt.colorbar(sm, cax=cbar_ax,
+                        ticks=np.array(self.autofit_dict[legend]))
+            cbar.set_label(legend,rotation=90)
+            fig.text(0.5, 0.04, '$t_{min}$', ha='center')
             if savefig:
                 plt.savefig('plots/'+self.name+'_'+self.param_names[p]+'.pdf')
+
 
         if 'calc_func' in self.dict.keys():
             n = len(self.dict['calc_func'])
             self.fit_dict['calc_func_sys_err'] = [0]*n
             for f in range(n):
-                plt.figure()
+                fig, ax = plt.subplots(n_t)
                 plt.suptitle(self.dict['calc_func_names'][f])
                 for t in range(n_t):
-                    plt.subplot(n_t,1,t+1)
-                    for idx, t_int in enumerate(self.autofit_dict['t_ints']):
+                    for idx, leg in enumerate(legend_vals):
                         if idx%int_skip==0:
-                            x = df.int[df.int.str[1]-df.int.str[0]==t_int]
-                            x = x[df.int.str[2]==thin[t]].str[0]
-                            y = df.calc_func[df.int.str[1]-df.int.str[0]==t_int]
-                            y = y[df.int.str[2]==thin[t]].str[f]
-                            yerr = df.calc_func_err[df.int.str[1]-df.int.str[0]==t_int]
-                            yerr = yerr[df.int.str[2]==thin[t]].str[f]
+                            if legend=='t_maxs':
+                                x = df.int[df.int.str[1]==leg]
+                                y = df.calc_func[df.int.str[1]==leg]
+                                yerr = df.calc_func_err[df.int.str[1]==leg]
+                            elif legend=='t_ints':
+                                x = df.int[df.int.str[1]-df.int.str[0]==leg]
+                                y = df.params[df.int.str[1]-df.int.str[0]==leg]
+                                yerr = df.params_err[df.int.str[1]-df.int.str[0]==leg]
 
-                            markers, caps, bars = plt.errorbar(x, y, yerr=yerr,
-                                                capsize=4, label=str(t_int),
-                                                linestyle='None', fmt='o')
-                            [bar.set_alpha(0.5) for bar in bars]
-                            [cap.set_alpha(0.5) for cap in caps]
-                    plt.legend(loc=1, bbox_to_anchor=(0.985,0.89),
-                                bbox_transform=plt.gcf().transFigure)
-                plt.xlabel('$t_{min}$')
+                            x = x[df.int.str[2]==thin[t]].str[0]
+                            y = y[df.int.str[2]==thin[t]].str[f]
+                            yerr = yerr[df.int.str[2]==thin[t]].str[f]
+                            
+                            if n_t>1:
+                                im = ax[t].errorbar(x, y, yerr=yerr,
+                                     capsize=4, c=cmap(norm(leg)), 
+                                     linestyle='None', fmt='o')
+                            else:
+                                im = ax.errorbar(x, y, yerr=yerr,
+                                     capsize=4, c=cmap(norm(leg)), 
+                                     linestyle='None', fmt='o')
+                sm = cm.ScalarMappable(cmap=cmap, norm=norm)
+                sm.set_array([])
+                fig.subplots_adjust(right=0.8)
+                cbar_ax = fig.add_axes([0.85, 0.15, 0.02, 0.7])
+                cbar = plt.colorbar(sm, cax=cbar_ax,
+                            ticks=np.array(self.autofit_dict[legend]))
+                cbar.set_label(legend,rotation=90)
+                fig.text(0.5, 0.04, '$t_{min}$', ha='center')
                 if savefig:
                     plt.savefig('plots/'+self.name+'_'+self.dict['calc_func_names'][f]+'.pdf')
                 
@@ -496,9 +531,11 @@ class stat_object:
             data_x = datarange
             ansatz_t = datarange
 
-        plt.plot(data_x, self.ansatz(self.params, ansatz_t, **self.dict))
-        plt.errorbar(data_x, self.data_avg[data_x], yerr=self.input_err[data_x], fmt='o', capsize=4)
-        plt.errorbar(x, self.fit_avg, yerr=self.fit_err, fmt='o', capsize=4)
+        plt.plot(data_x, self.ansatz(self.params, ansatz_t, **self.dict), label='ansatz')
+        plt.errorbar(data_x, self.data_avg[data_x], yerr=self.input_err[data_x],
+                     fmt='o', capsize=4, label='data')
+        plt.errorbar(x, self.fit_avg, yerr=self.fit_err, fmt='o', capsize=4, label='fit')
+        plt.legend()
         plt.title(self.name+' fit')
 
         if self.ansatz==cosh:

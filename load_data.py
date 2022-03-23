@@ -35,6 +35,17 @@ def import_data(TC_dict, direc, prefix):
     data = np.array([[h5py.File(direc+str(t_src)+'.'+cf+'.h5','r')[prefix+str(t_src)+'/correlator']['re'] for cf in TC_dict[str(t_src)]] for t_src in range(T)])
     return data
 
+def del_t_binning(data, delta=0, binsize=96, **kwargs): 
+    T, cfgs = data.shape[:2]
+    T_bin = int(T/binsize)
+    binned_data = np.zeros(shape=(T,cfgs*T_bin))
+    data = np.roll(data,-delta,axis=0)
+
+    for del_t in range(T):
+        for c in range(cfgs):
+            binned_data[del_t,c*T_bin:(c+1)*T_bin] = np.array([np.mean(data[(t*binsize):((t+1)*binsize),c,del_t],axis=0) for t in range(T_bin)])
+    
+    return binned_data
 #===========================================================================================
 # importing pion, kaon data
 

@@ -23,7 +23,7 @@ T = 96
 import pdb
 def get_correlators(dir_in_use, smeared, K=100, **kwargs):
     all_data = load_Kpi_data(dir_in_use, smeared, **kwargs)
-    [pion_data, kaon_data, C_data, R_data, KKpipiC_data, piKpiKC_data, KKpipiR_data, piKpiKR_data] = all_data
+    [pion_data, kaon_data, C, R, KKpipiC, piKpiKC, KKpipiR, piKpiKR] = all_data
 
     best_fits = pickle.load(open('pickles/best_fits_sm'+str(smeared)+'.p', 'rb'))
 
@@ -44,19 +44,17 @@ def get_correlators(dir_in_use, smeared, K=100, **kwargs):
     # C_Kpi ratios for both isospin channels
 
     delta = 1
-    D_data = pion_data*np.roll(kaon_data,-delta,axis=0)
-    D = del_t_binning(D_data)
-    C, R = del_t_binning(C_data), del_t_binning(R_data)
+    D = pion_data*np.roll(kaon_data,-delta,axis=0)
 
     #print(f'D:{np.mean(D,axis=1)},\nC:{np.mean(C,axis=1)},\nR:{np.mean(R,axis=1)}')
     #pickle.dump([D,C,R], open('DCR.p','wb'))
 
-    KpiI12 = stat_object(D+0.5*C-1.5*R, K=K)
+    KpiI12 = stat_object(del_t_binning(D+0.5*C-1.5*R), K=K)
     KpiI12_ratio = stat_object(KpiI12.org_samples/(pion.org_samples*kaon.org_samples),
             data_avg=KpiI12.org_data_avg/(pion.org_data_avg*kaon.org_data_avg),
             K=K, fold=True, name='KpiI12_ratio', I=0.5)
 
-    KpiI32 = stat_object(D-C, K=K)
+    KpiI32 = stat_object(del_t_binning(D-C), K=K)
     KpiI32_ratio = stat_object(KpiI32.org_samples/(pion.org_samples*kaon.org_samples),
             data_avg=KpiI32.org_data_avg/(pion.org_data_avg*kaon.org_data_avg),
             K=K, fold=True, name='KpiI32_ratio', I=1.5)
@@ -73,31 +71,23 @@ def get_correlators(dir_in_use, smeared, K=100, **kwargs):
     
     Delta = [15,20,25,30,40]
 
-    KKpipiD_data = np.zeros(shape=(len(Delta),T,cfgs,T))
-    piKpiKD_data = np.zeros(shape=(len(Delta),T,cfgs,T)) 
-    KKpipiD = np.zeros(shape=(len(Delta),T,cfgs)) 
-    piKpiKD = np.zeros(shape=(len(Delta),T,cfgs))
+    KKpipiD = np.zeros(shape=(len(Delta),T,cfgs,T))
+    piKpiKD = np.zeros(shape=(len(Delta),T,cfgs,T)) 
 
     for Del in Delta:
         for t_src in range(T):
             for t in range(T):
-                KKpipiD_data[Delta.index(Del),t_src,:,t] = pion_data[t_src,:,t]*kaon_data[(t+t_src+delta)%T,:,(Del-t-delta)%T]
-                piKpiKD_data[Delta.index(Del),t_src,:,t] = pion_data[(t+t_src)%T,:,(Del-t)%T]*kaon_data[t_src,:,(t+delta)%T]
-        KKpipiD[Delta.index(Del),:,:] = del_t_binning(KKpipiD_data[Delta.index(Del),:,:,:])
-        piKpiKD[Delta.index(Del),:,:] = del_t_binning(piKpiKD_data[Delta.index(Del),:,:,:])
+                KKpipiD[Delta.index(Del),t_src,:,t] = pion_data[t_src,:,t]*kaon_data[(t_src+t+delta)%T,:,(Del-t-delta)%T]
+                piKpiKD[Delta.index(Del),t_src,:,t] = pion_data[(t_src+t)%T,:,(Del-t)%T]*kaon_data[t_src,:,(t+delta)%T]
 
-    KKpipiC = np.array([del_t_binning(KKpipiC_data[i,:,:,:]) for i in range(len(Delta))])
-    KKpipiR = np.array([del_t_binning(KKpipiR_data[i,:,:,:]) for i in range(len(Delta))])
-    piKpiKC = np.array([del_t_binning(piKpiKC_data[i,:,:,:]) for i in range(len(Delta))])
-    piKpiKR = np.array([del_t_binning(piKpiKR_data[i,:,:,:]) for i in range(len(Delta))])
-
-    KKpipi32 = np.array([stat_object(KKpipiD[i,:,:]-KKpipiC[i,:,:], K=K) for i in range(len(Delta))], dtype=object)
-    KKpipi12 = np.array([stat_object(KKpipiD[i,:,:]+0.5*KKpipiC[i,:,:]-1.5*KKpipiR[i,:,:], K=K) for i in range(len(Delta))], dtype=object)
-    piKpiK32 = np.array([stat_object(piKpiKD[i,:,:]-piKpiKC[i,:,:], K=K) for i in range(len(Delta))], dtype=object)
-    piKpiK12 = np.array([stat_object(piKpiKD[i,:,:]+0.5*piKpiKC[i,:,:]-1.5*piKpiKR[i,:,:], K=K) for i in range(len(Delta))], dtype=object)
-    
-    #print(f'{np.roll(np.flip(KKpipi12[2].data_avg),-25)/(piKpiK12[2].data_avg*np.exp(2*m_kaon*25))}')
-    #print(f'{np.roll(np.flip(KKpipi12[2].data_avg),25)/(piKpiK12[2].data_avg)}')
+    KKpipi32 = np.array([stat_object(del_t_binning(KKpipiD[i,:,:,:]-KKpipiC[i,:,:,:]), K=K)
+                        for i in range(len(Delta))], dtype=object)
+    KKpipi12 = np.array([stat_object(del_t_binning(KKpipiD[i,:,:,:]+0.5*KKpipiC[i,:,:,:]-1.5*KKpipiR[i,:,:,:]), K=K)
+                        for i in range(len(Delta))], dtype=object)
+    piKpiK32 = np.array([stat_object(del_t_binning(piKpiKD[i,:,:,:]-piKpiKC[i,:,:,:]), K=K)
+                        for i in range(len(Delta))], dtype=object)
+    piKpiK12 = np.array([stat_object(del_t_binning(piKpiKD[i,:,:,:]+0.5*piKpiKC[i,:,:,:]-1.5*piKpiKR[i,:,:,:]), K=K)
+                        for i in range(len(Delta))], dtype=object)
     ATW_corrs = np.array([KKpipi12, KKpipi32, piKpiK12, piKpiK32], dtype=object)
 
     names, I = ['KKpipi', 'piKpiK'], ['12','32']
@@ -112,8 +102,8 @@ def get_correlators(dir_in_use, smeared, K=100, **kwargs):
         k2_data = np.zeros(shape=(T,cfgs,T))
         for t_src in range(T):
             for t in range(T):
-                k1_data[t_src,:,t] = kaon_data[t_src,:,(Delta[i]-t-delta)%T]
-                p2_data[t_src,:,t] = pion_data[t_src,:,(Delta[i]-t)%T]
+                k1_data[t_src,:,t] = kaon_data[(t_src+t+delta)%T,:,(Delta[i]-t-delta)%T]
+                p2_data[t_src,:,t] = pion_data[(t_src+t)%T,:,(Delta[i]-t)%T]
                 k2_data[t_src,:,t] = kaon_data[t_src,:,(t+delta)%T]
 
         p1 = stat_object(del_t_binning(p1_data), K=K)

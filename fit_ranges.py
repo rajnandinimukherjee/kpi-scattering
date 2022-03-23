@@ -6,7 +6,7 @@ import re
 from plot_settings import plotparams
 plt.rcParams.update(plotparams)
 
-dict12, dict32 = pickle.load(open('pickles/double_fit_dicts.p','rb'))
+dict12, dict32 = pickle.load(open('pickles/double_fit_dicts_uncorr.p','rb'))
 
 da12 = {}
 da32 = {}
@@ -175,6 +175,7 @@ def heatmap(I,func=0, cuts=False, **kwargs):
     k1 = [k for k in d.keys()]
     k2 = [k for k in d[list(d)[0]].keys()]
     scat_2D = np.array([[d[key1][key2]['calc_func'][func] for key1 in k1] for key2 in k2]) 
+    m_p_val = np.array([[d[key1][key2]['params'][1] for key1 in k1] for key2 in k2]) 
     errs_2D = np.array([[perc(d[key1][key2]['calc_func'][func],d[key1][key2]['calc_func_err'][func])
                     for key1 in k1] for key2 in k2])
     pval = np.array([[d[key1][key2]['pvalue']
@@ -182,7 +183,7 @@ def heatmap(I,func=0, cuts=False, **kwargs):
     
 
     fig, ax = plt.subplots()
-    im = ax.imshow(pval)
+    im = ax.imshow(scat_2D)
     cbar = ax.figure.colorbar(im, ax=ax)
     cbar.ax.set_ylabel(label, rotation=90, va="bottom")
 
